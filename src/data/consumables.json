@@ -1,0 +1,26 @@
+{
+  "o2KgPerPersonDay": {
+    "value": 0.895,
+    "source": "NASA BVAD Rev 2, Table 3-31 (oxygen one astronaut breathes in a day; PDF page 72; raw/bvad/bvad_values.csv, key o2_per_person)"
+  },
+  "foodKgPerPersonDay": {
+    "value": 0.8,
+    "source": "NASA BVAD Rev 2, Table 3-31 (food eaten in a day, dry mass; PDF page 72; raw/bvad/bvad_values.csv, key food_dry_per_person)"
+  },
+  "waterKgPerPersonDay": {
+    "value": 3.217,
+    "source": "NASA BVAD Rev 2, Table 3-31 (drinking and food water used in a day; PDF page 72; raw/bvad/bvad_values.csv, key water_per_person)"
+  },
+  "wheatO2GramsPerM2Day": {
+    "value": 56,
+    "source": "NASA BVAD Rev 2, Table 4-91 (oxygen made per square metre of wheat per day; PDF page 188; raw/bvad/bvad_values.csv, key wheat_o2)"
+  },
+  "lettuceO2GramsPerM2Day": {
+    "value": 7.78,
+    "source": "NASA BVAD Rev 2, Table 4-91 (oxygen made per square metre of lettuce per day; PDF page 188; raw/bvad/bvad_values.csv, key lettuce_o2)"
+  },
+  "lettuceDays": {
+    "value": 28,
+    "source": "NASA BVAD Rev 2, Table 4-89 (days for lettuce to grow; PDF page 186; raw/bvad/bvad_values.csv, key lettuce_days)"
+  }
+}

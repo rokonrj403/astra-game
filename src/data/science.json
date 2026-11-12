@@ -1,0 +1,16 @@
+[
+  {
+    "id": "osd-964",
+    "kidLine": "In a lab, more space-like rays slowed tiny yeast.",
+    "learnMore": "Scientists gave tiny yeast cells space-like rays in a lab. The more rays, the slower they grew. Yeast that could fix itself did better.",
+    "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-964",
+    "source": "NASA OSDR OSD-964; Liddell et al. 2023, Astrobiology, doi:10.1089/ast.2022.0124; raw/osdr/README.md"
+  },
+  {
+    "id": "osd-435",
+    "kidLine": "Mouse hearts kept pumping well after proton rays.",
+    "learnMore": "Mice got proton rays, the kind of particle solar storms send. Their hearts kept pumping normally, but scientists saw small changes inside.",
+    "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-435",
+    "source": "NASA OSDR OSD-435; Seawright et al. 2019, Life Sciences in Space Research 20:72-84, doi:10.1016/j.lssr.2019.01.003; raw/osdr/README.md"
+  }
+]

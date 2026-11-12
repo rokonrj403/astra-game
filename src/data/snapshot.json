@@ -1,0 +1,80 @@
+{
+  "savedThrough": "2026-11-12",
+  "source": "NASA DONKI archive pulled 2026-11-12 (raw/donki/MANIFEST.json); flares, radiation storms (real-instrument records only), CMEs, magnetic storms (Kp from allKpIndex)",
+  "flares": [
+    {
+      "class": "M1.3",
+      "peakTime": "2026-10-16T15:42Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49134/-1"
+    },
+    {
+      "class": "M1.6",
+      "peakTime": "2026-10-19T09:03Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49165/-1"
+    },
+    {
+      "class": "C1.3",
+      "peakTime": "2026-10-23T03:55Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49214/-1"
+    },
+    {
+      "class": "C1.9",
+      "peakTime": "2026-10-26T08:38Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49256/-1"
+    },
+    {
+      "class": "C2.8",
+      "peakTime": "2026-10-26T18:40Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49278/-1"
+    },
+    {
+      "class": "M3.5",
+      "peakTime": "2026-11-05T18:33Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49391/-1"
+    },
+    {
+      "class": "M1.2",
+      "peakTime": "2026-11-07T12:43Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49433/-1"
+    },
+    {
+      "class": "M1.4",
+      "peakTime": "2026-11-07T17:17Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49442/-1"
+    },
+    {
+      "class": "M1.9",
+      "peakTime": "2026-11-07T18:42Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49448/-1"
+    },
+    {
+      "class": "M1.7",
+      "peakTime": "2026-11-08T07:46Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49453/-1"
+    },
+    {
+      "class": "M1.1",
+      "peakTime": "2026-11-08T15:37Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49456/-1"
+    },
+    {
+      "class": "M1.1",
+      "peakTime": "2026-11-08T18:27Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49461/-1"
+    },
+    {
+      "class": "M1.7",
+      "peakTime": "2026-11-11T21:21Z",
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/49504/-1"
+    }
+  ],
+  "radiationStorms": [],
+  "cmes": 83,
+  "magneticStorms": [
+    {
+      "time": "2026-10-31T18:00Z",
+      "kp": 6,
+      "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/49348/-1"
+    }
+  ]
+}

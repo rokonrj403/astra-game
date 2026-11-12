@@ -1,0 +1,50 @@
+[
+  {
+    "id": "donki",
+    "name": "NASA DONKI",
+    "gives": "Real solar flares, space-ray storms and magnetic storms. Storm cards and Today’s Sun.",
+    "url": "https://ccmc.gsfc.nasa.gov/DONKI/",
+    "licence": "US Government, public domain",
+    "note": "Archive pulled 12 Nov 2026. One radiation-storm record exists per detector, so we count storms, not records."
+  },
+  {
+    "id": "noaa",
+    "name": "NOAA SWPC + GOES",
+    "gives": "How strong each storm’s space rays were (S1 to S5) and the shape of the storm.",
+    "url": "https://www.swpc.noaa.gov/noaa-scales-explanation",
+    "licence": "US Government, public domain",
+    "note": "Measured at Earth’s distance from the Sun. The Moon is at about the same distance, so we use it as a stand-in for a Moon base."
+  },
+  {
+    "id": "bvad",
+    "name": "NASA BVAD (2022)",
+    "gives": "How much air, water and food one astronaut uses each day.",
+    "url": "https://ntrs.nasa.gov/citations/20210024855",
+    "licence": "US Government",
+    "note": "We turn kilograms into bars a child can read."
+  },
+  {
+    "id": "regions",
+    "name": "NASA’s 9 candidate landing regions",
+    "gives": "The 9 places you can choose near the Moon’s South Pole.",
+    "url": "https://ntrs.nasa.gov/citations/20250011660",
+    "licence": "US Government",
+    "note": "These are candidate regions, not a landing plan. Centres are read off NASA’s map, so they are approximate."
+  },
+  {
+    "id": "lola",
+    "name": "LRO LOLA maps",
+    "gives": "How sunny each region is, and how often Earth is in view.",
+    "url": "https://pgda.gsfc.nasa.gov/products/69",
+    "licence": "Cite Mazarico et al. 2011",
+    "note": "These are long-term averages, not a calendar. The game spreads sunny days and Earth-view days evenly to match each region’s share."
+  },
+  {
+    "id": "osdr",
+    "name": "NASA OSDR",
+    "gives": "Real lab findings about what space rays do to living things.",
+    "url": "https://osdr.nasa.gov",
+    "licence": "NASA open data; cite each paper",
+    "note": "Yeast and mice in a lab. Not results for people."
+  }
+]

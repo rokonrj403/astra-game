@@ -1,0 +1,191 @@
+[
+  {
+    "id": "region-1",
+    "name": "Peak near Cabeus B",
+    "kidLine": "A sunny mountain peak beside a crater called Cabeus B.",
+    "latDeg": {
+      "value": -83.7,
+      "source": "NASA 9-region map, approximate box centre (NASA 9-region map (NTRS 20250011660 Image 1) box centre; approx ±0.2° lat); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": -68.6,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.277,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.422,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-2",
+    "name": "Haworth",
+    "kidLine": "High ground at the edge of the big Haworth crater.",
+    "latDeg": {
+      "value": -86.8,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": -22.7,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.285,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.429,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-3",
+    "name": "Malapert Massif",
+    "kidLine": "A giant block of mountains close to the South Pole.",
+    "latDeg": {
+      "value": -86,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": -0.2,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.381,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.486,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-4",
+    "name": "Mons Mouton Plateau",
+    "kidLine": "The wide high top of a big Moon mountain.",
+    "latDeg": {
+      "value": -84.4,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre; approx (region ~78 x 58 km; much bigger than others)); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": 30.7,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.282,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.683,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-5",
+    "name": "Mons Mouton",
+    "kidLine": "A mountain named after NASA mathematician Melba Mouton.",
+    "latDeg": {
+      "value": -85.4,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre only; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": 31.8,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.327,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.529,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-6",
+    "name": "Nobile Rim 1",
+    "kidLine": "A spot on the rim of Nobile crater.",
+    "latDeg": {
+      "value": -85.5,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre only; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": 37.3,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.303,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.278,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-7",
+    "name": "Nobile Rim 2",
+    "kidLine": "Another spot on Nobile crater's rim farther east.",
+    "latDeg": {
+      "value": -84,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": 58.8,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.383,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.544,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-8",
+    "name": "de Gerlache Rim 2",
+    "kidLine": "A crater edge very close to the South Pole.",
+    "latDeg": {
+      "value": -88.3,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": -64.2,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.391,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.562,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  },
+  {
+    "id": "region-9",
+    "name": "Slater Plain",
+    "kidLine": "A fairly flat area just north of Slater crater.",
+    "latDeg": {
+      "value": -87.2,
+      "source": "NASA 9-region map, approximate box centre (NASA map box centre only; approx); raw/artemis/regions.csv"
+    },
+    "lonDegEast": {
+      "value": 125.2,
+      "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
+    },
+    "sunShare": {
+      "value": 0.271,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+    },
+    "earthShare": {
+      "value": 0.351,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+    }
+  }
+]

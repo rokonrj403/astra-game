@@ -1,4 +1,5 @@
 import { activeWarning, currentCard, newGame, radioAvailable, step, type NewGameOptions } from './game'
+import { BLOCKS } from './constants'
 import { makeRng } from './rng'
 import type { Choice, GameState, Jobs } from './types'
 
@@ -23,6 +24,23 @@ function careful(useRadio: boolean): Bot {
   }
 }
 
+/** Random power split and a coin-flip Go/Stay each day. Seeded from the state, so a run can be repeated. */
+function randomBot(): Bot {
+  return (s) => {
+    const rng = makeRng(s.seed * 7919 + s.day * 104729)
+    const earth = radioAvailable(s)
+    const keys = ['air', 'shield', 'plants', 'radio'] as const
+    const jobs = J()
+    let blocks = Math.floor(rng() * (BLOCKS + 1))
+    while (blocks-- > 0) {
+      const k = keys[Math.floor(rng() * keys.length)]!
+      if (k === 'radio' && !earth) continue
+      jobs[k]++
+    }
+    return { jobs, go: currentCard(s) !== null && rng() < 0.5 }
+  }
+}
+
 export const bots = {
   idle: fixed(J()),
   allAir: fixed(J(6)),
@@ -31,6 +49,7 @@ export const bots = {
   allRadio: ((s) => ({ jobs: J(0, 0, 0, radioAvailable(s) ? 6 : 0), go: false })) as Bot,
   smart: careful(true),
   noRadio: careful(false),
+  random: randomBot(),
 }
 
 export function playBot(bot: Bot, o: NewGameOptions): GameState {

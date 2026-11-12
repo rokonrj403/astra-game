@@ -1,8 +1,20 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { App } from './App'
 
-afterEach(cleanup)
+// No test touches the real network: NASA is "offline", so Today's Sun is SAVED.
+beforeEach(() => {
+  vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')))
+  try {
+    localStorage.clear()
+  } catch {
+    /* ignore */
+  }
+})
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 const tap = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 
@@ -100,6 +112,68 @@ describe('screens', () => {
     expect(text).toContain('never these numbers')
     tap('Back')
     expect(screen.getByRole('heading', { name: 'ASTRA' })).toBeTruthy()
+  })
+
+  it("Today's Sun says SAVED, with the saved date, when NASA cannot be reached", async () => {
+    render(<App />)
+    tap("Today’s Sun")
+    await waitFor(() => expect(document.querySelector('[data-status="SAVED"]')).not.toBeNull())
+    expect(document.querySelector('[data-status="LIVE"]')).toBeNull()
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('12 Nov 2026')
+    expect(text).toContain('not live')
+    expect(text).toContain('does not predict storms')
+  })
+
+  it("Today's Sun says LIVE only after NASA really answers", async () => {
+    const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as Response
+    vi.stubGlobal('fetch', (url: string) =>
+      Promise.resolve(ok(String(url).includes('/FLR?') ? [{ classType: 'M1.0', peakTime: new Date(Date.now() - 3_600_000).toISOString(), link: 'https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/1/-1' }] : [])),
+    )
+    render(<App />)
+    tap("Today’s Sun")
+    await waitFor(() => expect(document.querySelector('[data-status="LIVE"]')).not.toBeNull())
+    expect(document.querySelector('[data-status="SAVED"]')).toBeNull()
+  })
+
+  it("the base screen has a Today's Sun chip that shows its label and keeps the blocks you set", async () => {
+    startGame('Cadet')
+    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Today's Sun, SAVED/ })).toBeTruthy())
+    tap(/Today's Sun, SAVED/)
+    expect(screen.getByRole('heading', { name: 'Today’s Sun' })).toBeTruthy()
+    tap('Back')
+    expect(screen.getByText('5 left')).toBeTruthy()
+  })
+
+  it('storm cards start locked, are labelled FROM THE PAST, and unlock after a storm reaches the base', () => {
+    render(<App />)
+    tap('My storm cards')
+    expect(screen.getByText(/0 of 8 real storms/)).toBeTruthy()
+    expect(screen.getAllByLabelText('Locked storm card')).toHaveLength(8)
+    tap('Back')
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    tap('Play')
+    tap(/Malapert Massif/)
+    tap(/Cadet/)
+    // A steady split: 3 blocks Air, 3 blocks Shield, every day, so the storm reaches the base.
+    for (let guard = 0; guard < 40; guard++) {
+      if (screen.queryByRole('heading', { name: /Mission complete|The rescue ship is here/ })) break
+      if (screen.queryByRole('heading', { name: 'Why it happened' })) tap('See my mission')
+      else if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
+      else if (screen.queryByRole('button', { name: 'Finish the mission' })) tap('Finish the mission')
+      else if (screen.queryByText(/Share power/)) {
+        for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
+        for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
+        tap('Next day')
+      } else tap('Next day')
+    }
+    vi.restoreAllMocks()
+    tap('Play again')
+    tap('My storm cards')
+    expect(screen.getByText(/1 of 8 real storms/)).toBeTruthy()
+    expect(document.querySelector('[data-status="PAST"]')).not.toBeNull()
+    expect(screen.getAllByLabelText('Locked storm card')).toHaveLength(7)
   })
 
   it('uses the kid word rules: "day" not "sol", "tap" not "click"', () => {

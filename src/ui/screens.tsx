@@ -25,13 +25,15 @@ import { activeWarning, badges, currentCard, explain, radioAvailable, radioDelay
 import { cards } from '../engine/cards'
 import { makeRng } from '../engine/rng'
 import type { BadgeId, Choice, GameState, Jobs, Loss, Meters, Mode } from '../engine/types'
+import type { SunView } from '../live/sun'
+import { SunChip } from './sunscreens'
 
 const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
 const percent = (x: number) => Math.round(x * 100)
 
 /* ---------- Start ---------- */
 
-export function Start({ onPlay, onData }: { onPlay: () => void; onData: () => void }) {
+export function Start({ onPlay, onData, onSun, onCards }: { onPlay: () => void; onData: () => void; onSun: () => void; onCards: () => void }) {
   return (
     <main className="app">
       <div className="hero">
@@ -40,6 +42,12 @@ export function Start({ onPlay, onData }: { onPlay: () => void; onData: () => vo
         <p className="tagline">Run a Moon base. Keep the crew safe from real solar storms.</p>
         <button className="primary" onClick={onPlay}>
           Play
+        </button>
+        <button className="link" onClick={onSun}>
+          Today’s Sun
+        </button>
+        <button className="link" onClick={onCards}>
+          My storm cards
         </button>
         <button className="link" onClick={onData}>
           Where the data comes from
@@ -185,7 +193,7 @@ function warningText(daysUntil: number): string {
   return `A storm comes in ${daysUntil} days.`
 }
 
-export function Base({ game, onShare, onData }: { game: GameState; onShare: (c: Choice) => void; onData: () => void }) {
+export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; sun: SunView | null; onShare: (c: Choice) => void; onData: () => void; onSun: () => void }) {
   const [jobs, setJobs] = useState<Jobs>({ air: 0, shield: 0, plants: 0, radio: 0 })
   const [go, setGo] = useState(false)
   const card = currentCard(game)
@@ -219,6 +227,7 @@ export function Base({ game, onShare, onData }: { game: GameState; onShare: (c: 
           <Globe size={18} color={earth ? 'var(--radio)' : undefined} aria-hidden="true" />
           {earth ? 'Earth in view' : 'Earth hidden'}
         </span>
+        <SunChip sun={sun} onTap={onSun} />
       </div>
 
       {warn && (

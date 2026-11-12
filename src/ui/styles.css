@@ -34,6 +34,7 @@ body {
   min-height: 100dvh;
 }
 .app {
+  overflow-wrap: anywhere;
   max-width: 520px;
   min-height: 100dvh;
   margin: 0 auto;
@@ -178,7 +179,7 @@ button.link {
   margin-bottom: 12px;
 }
 .fineprint {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -341,7 +342,7 @@ button.link {
 }
 .job .what small {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 .counter {
   display: flex;
@@ -391,7 +392,7 @@ button.link {
 .toggle button small {
   font-weight: 400;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 .toggle button[aria-pressed='true'] {
   border-color: var(--sun);
@@ -410,6 +411,11 @@ button.link {
   display: flex;
   gap: 10px;
   align-items: flex-start;
+}
+.list li > b {
+  flex: none;
+  white-space: nowrap;
+  min-width: 4ch;
 }
 .change {
   display: flex;
@@ -514,7 +520,7 @@ summary {
 }
 .datum .src {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
 .datum a {

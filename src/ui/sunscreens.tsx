@@ -38,7 +38,7 @@ export function SunChip({ sun, onTap }: { sun: SunView | null; onTap: () => void
   return (
     <button className="chip sunchip" onClick={onTap} aria-label={`Today's Sun, ${word}`}>
       <Sun size={18} color={color} aria-hidden="true" />
-      Today’s Sun · {word}
+      Sun · {word}
     </button>
   )
 }

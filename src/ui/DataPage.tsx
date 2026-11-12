@@ -97,7 +97,9 @@ export function DataPage({ onBack }: { onBack: () => void }) {
       </details>
 
       <p className="fineprint">
-        ASTRA uses NASA data. It is not made or endorsed by NASA. The game was made with help from Claude AI, and its voices use Kokoro-82M, an AI voice model. This is a game, not a real mission tool.
+        ASTRA uses NASA data. It is not made or endorsed by NASA. The game was made with help from Claude AI. Read-aloud uses your device’s own voice. This is a game, not a real mission tool.
+        <br />
+        Crew faces: built from Open Peeps by Pablo Stanley (CC0). ORBI and the Moon base picture: drawn by our team from simple shapes. Font: Nunito (SIL Open Font License). Icons: Lucide (ISC licence).
       </p>
     </main>
   )

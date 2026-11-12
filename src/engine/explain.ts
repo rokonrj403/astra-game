@@ -16,7 +16,7 @@ const plural = (n: number) => `${n} block${n === 1 ? '' : 's'}`
 function change(r: DayRecord, m: Loss): string {
   const a = Math.round(r.before[m])
   const b = Math.round(r.after[m])
-  return `${METER_WORD[m]} went from ${a} to ${b}.`
+  return a === b ? `${METER_WORD[m]} stayed at ${a}.` : `${METER_WORD[m]} went from ${a} to ${b}.`
 }
 
 function dayLine(r: DayRecord, m: Loss): string {

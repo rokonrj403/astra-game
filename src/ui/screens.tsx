@@ -1,39 +1,35 @@
 import { useEffect, useState } from 'react'
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  Database,
-  Globe,
-  Minus,
-  Moon,
-  Plus,
-  Radiation,
-  Radio,
-  Rocket,
-  Shield,
-  Sprout,
-  Sun,
-  Wind,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react'
+import { Check, Globe, Moon, Radiation, Radio, Sun, type LucideIcon } from 'lucide-react'
 import sites from '../data/sites.json'
 import storms from '../data/storms.json'
-import { BLOCKS, MODES, MODE_CARDS, POWER_PER_BLOCK } from '../engine/constants'
-import { activeWarning, badges, currentCard, explain, radioAvailable, radioDelay, score, step, stormsSurvived } from '../engine/game'
+import { MODES, MODE_CARDS } from '../engine/constants'
+import { badges, explain, radioDelay, score, stormsSurvived } from '../engine/game'
 import { cards } from '../engine/cards'
-import { makeRng } from '../engine/rng'
-import type { BadgeId, Choice, GameState, Jobs, Loss, Meters, Mode } from '../engine/types'
-import type { SunView } from '../live/sun'
-import { SunChip } from './sunscreens'
+import type { BadgeId, GameState, Loss, Mode } from '../engine/types'
+import { OrbiFace } from './art'
+import { METERS } from './base'
+import { Speak } from './speech'
 
-const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
+export const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
 const percent = (x: number) => Math.round(x * 100)
 
 /* ---------- Start ---------- */
 
-export function Start({ onPlay, onData, onSun, onCards }: { onPlay: () => void; onData: () => void; onSun: () => void; onCards: () => void }) {
+export function Start({
+  onPlay,
+  onData,
+  onSun,
+  onCards,
+  onSettings,
+  onTeachers,
+}: {
+  onPlay: () => void
+  onData: () => void
+  onSun: () => void
+  onCards: () => void
+  onSettings: () => void
+  onTeachers: () => void
+}) {
   return (
     <main className="app">
       <div className="hero">
@@ -43,19 +39,25 @@ export function Start({ onPlay, onData, onSun, onCards }: { onPlay: () => void; 
         <button className="primary" onClick={onPlay}>
           Play
         </button>
-        <button className="link" onClick={onSun}>
-          Today’s Sun
-        </button>
-        <button className="link" onClick={onCards}>
-          My storm cards
-        </button>
+        <div className="links">
+          <button className="link" onClick={onSun}>
+            Today’s Sun
+          </button>
+          <button className="link" onClick={onCards}>
+            My storm cards
+          </button>
+          <button className="link" onClick={onSettings}>
+            Settings
+          </button>
+          <button className="link" onClick={onTeachers}>
+            For teachers
+          </button>
+        </div>
         <button className="link" onClick={onData}>
           Where the data comes from
         </button>
       </div>
-      <p className="fineprint">
-        {NASA_NOTE} Made with help from Claude AI. Voices use Kokoro-82M, an AI voice model.
-      </p>
+      <p className="fineprint">{NASA_NOTE} Made with help from Claude AI. Read-aloud uses your device’s voice.</p>
     </main>
   )
 }
@@ -126,187 +128,6 @@ export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBa
   )
 }
 
-/* ---------- Bars ---------- */
-
-const METERS: { key: Loss; label: string; Icon: LucideIcon; color: string }[] = [
-  { key: 'air', label: 'Air', Icon: Wind, color: 'var(--air)' },
-  { key: 'power', label: 'Power', Icon: Zap, color: 'var(--power)' },
-  { key: 'radiation', label: 'Radiation', Icon: Radiation, color: 'var(--radiation)' },
-  { key: 'food', label: 'Food', Icon: Sprout, color: 'var(--plants)' },
-]
-
-function Bars({ game, forecast }: { game: GameState; forecast: Meters | null }) {
-  return (
-    <section className="meters" aria-label="Base bars">
-      {METERS.filter((m) => m.key !== 'food' || game.hasFood).map(({ key, label, Icon, color }) => {
-        const v = game[key]
-        const on = Math.round(v / 10)
-        const delta = forecast ? Math.round(forecast[key] - v) : 0
-        const bad = key === 'radiation' ? delta > 0 : delta < 0
-        return (
-          <div key={key} className="meter">
-            <Icon size={26} color={color} className="icon" aria-hidden="true" />
-            <span className="label">{label}</span>
-            <span className="value">{Math.round(v)}</span>
-            <div className="segments" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)} style={{ ['--c' as string]: color }}>
-              {Array.from({ length: 10 }, (_, i) => (
-                <i key={i} className={i < on ? 'on' : undefined} />
-              ))}
-            </div>
-            {forecast && (
-              <span className={`delta${bad ? ' bad' : ''}`}>
-                {delta === 0 ? <Minus size={14} aria-hidden="true" /> : delta > 0 ? <ArrowUp size={14} aria-hidden="true" /> : <ArrowDown size={14} aria-hidden="true" />}
-                {delta === 0 ? 'Stays the same' : `Forecast ${delta > 0 ? 'up' : 'down'} ${Math.abs(delta)}`}
-              </span>
-            )}
-          </div>
-        )
-      })}
-    </section>
-  )
-}
-
-/** What the bars would do tomorrow with these jobs. Storms nobody has warned about stay hidden. */
-function forecastFor(g: GameState, jobs: Jobs): Meters | null {
-  const hidden: GameState = { ...g, storms: g.storms.map((p, i) => (g.warned[i] ? p : { ...p, arrivalDay: 9999 })) }
-  try {
-    const n = step(hidden, { jobs, go: false }, makeRng(1))
-    return { air: n.air, power: n.power, radiation: n.radiation, food: n.food }
-  } catch {
-    return null
-  }
-}
-
-/* ---------- Base: forecast, share power, choice card ---------- */
-
-const JOB_ROWS: { key: keyof Jobs; label: string; hint: string; Icon: LucideIcon; color: string }[] = [
-  { key: 'air', label: 'Air', hint: 'Makes fresh air', Icon: Wind, color: 'var(--air)' },
-  { key: 'shield', label: 'Shield', hint: 'Blocks space rays', Icon: Shield, color: 'var(--power)' },
-  { key: 'plants', label: 'Plants', hint: 'Makes food and a little air', Icon: Sprout, color: 'var(--plants)' },
-  { key: 'radio', label: 'Radio', hint: 'Calls Earth for storm news', Icon: Radio, color: 'var(--radio)' },
-]
-
-function warningText(daysUntil: number): string {
-  if (daysUntil < 0) return 'The storm is still here. Keep the shield up.'
-  if (daysUntil === 0) return 'Storm today! Put blocks on the Shield.'
-  if (daysUntil === 1) return 'A storm comes tomorrow. Get the Shield ready.'
-  return `A storm comes in ${daysUntil} days.`
-}
-
-export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; sun: SunView | null; onShare: (c: Choice) => void; onData: () => void; onSun: () => void }) {
-  const [jobs, setJobs] = useState<Jobs>({ air: 0, shield: 0, plants: 0, radio: 0 })
-  const [go, setGo] = useState(false)
-  const card = currentCard(game)
-  const warn = activeWarning(game)
-  const earth = radioAvailable(game)
-  const sunny = game.sunDays[game.day - 1] === true
-  const used = jobs.air + jobs.shield + jobs.plants + jobs.radio
-  const left = BLOCKS - used
-  const rows = JOB_ROWS.filter((r) => r.key !== 'plants' || game.hasFood)
-  const forecast = forecastFor(game, jobs)
-
-  const bump = (k: keyof Jobs, by: number) => setJobs((j) => ({ ...j, [k]: Math.max(0, j[k] + by) }))
-
-  return (
-    <main className="app">
-      <div className="top">
-        <span className="day">
-          Day {game.day} of {game.totalDays}
-        </span>
-        <button className="link" onClick={onData}>
-          <Database size={16} aria-hidden="true" style={{ verticalAlign: '-2px' }} /> Data
-        </button>
-      </div>
-
-      <div className="chips">
-        <span className="chip">
-          {sunny ? <Sun size={18} color="var(--sun)" aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-          {sunny ? 'Sunny day' : 'Dark day'}
-        </span>
-        <span className="chip">
-          <Globe size={18} color={earth ? 'var(--radio)' : undefined} aria-hidden="true" />
-          {earth ? 'Earth in view' : 'Earth hidden'}
-        </span>
-        <SunChip sun={sun} onTap={onSun} />
-      </div>
-
-      {warn && (
-        <div className="alert" role="alert">
-          <Radiation size={26} color="var(--radiation)" className="icon" aria-hidden="true" />
-          <span>{warningText(warn.daysUntil)}</span>
-        </div>
-      )}
-
-      {game.day === 1 && (
-        <div className="orbi">
-          <Rocket size={22} color="var(--sun)" className="icon" aria-hidden="true" />
-          <p>
-            <b>ORBI:</b> You have {BLOCKS} blocks each day. Tap + to give them to a job. Check the forecast first.
-          </p>
-        </div>
-      )}
-
-      <Bars game={game} forecast={forecast} />
-
-      <section className="stack" aria-label="Share power">
-        <div className="row between">
-          <h3>Share power</h3>
-          <span className="pips" aria-label={`${left} blocks left`}>
-            {Array.from({ length: BLOCKS }, (_, i) => (
-              <i key={i} className={i < left ? 'on' : undefined} />
-            ))}
-            <span className="muted">{left} left</span>
-          </span>
-        </div>
-        <p className="muted">Each block uses {POWER_PER_BLOCK} power.</p>
-        <div className="jobs">
-          {rows.map(({ key, label, hint, Icon, color }) => {
-            const blocked = key === 'radio' && !earth
-            return (
-              <div className="job" key={key}>
-                <Icon size={26} color={color} className="icon" aria-hidden="true" />
-                <span className="what">
-                  <b>{label}</b>
-                  <small>{blocked ? 'Earth is hidden today' : hint}</small>
-                </span>
-                <span className="counter">
-                  <button aria-label={`Fewer blocks for ${label}`} disabled={jobs[key] === 0} onClick={() => bump(key, -1)}>
-                    <Minus size={22} aria-hidden="true" />
-                  </button>
-                  <output aria-label={`${label} blocks`}>{jobs[key]}</output>
-                  <button aria-label={`More blocks for ${label}`} disabled={blocked || left === 0} onClick={() => bump(key, 1)}>
-                    <Plus size={22} aria-hidden="true" />
-                  </button>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {card && (
-        <section className="card stack" aria-label="Choice card">
-          <h3>{card.question}</h3>
-          <div className="toggle">
-            <button aria-pressed={go} onClick={() => setGo(true)}>
-              Go
-              <small>{card.go.replace(/^Go: /, '')}</small>
-            </button>
-            <button aria-pressed={!go} onClick={() => setGo(false)}>
-              Stay
-              <small>{card.stay.replace(/^Stay: /, '')}</small>
-            </button>
-          </div>
-        </section>
-      )}
-
-      <button className="primary" onClick={() => onShare({ jobs, go: card !== null && go })}>
-        Next day
-      </button>
-    </main>
-  )
-}
-
 /* ---------- Day report ---------- */
 
 function RadioCall({ game, day }: { game: GameState; day: number }) {
@@ -371,15 +192,24 @@ function StormPanel({ game, index }: { game: GameState; index: number }) {
 
 const LABEL: Record<Loss, string> = { air: 'Air', power: 'Power', radiation: 'Radiation', food: 'Food' }
 
+/** "Air went from 80 to 64." or, when nothing changed, "Air stayed at 100." */
+export function changeLine(label: string, a: number, b: number): string {
+  return a === b ? `${label} stayed at ${a}.` : `${label} went from ${a} to ${b}.`
+}
+
 export function Report({ game, onNext }: { game: GameState; onNext: () => void }) {
   const r = game.history[game.history.length - 1]
   if (!r) return null
   const card = cards.find((c) => c.id === r.cardId)
   const over = game.status !== 'playing'
   const next = game.status === 'won' ? 'Finish the mission' : game.status === 'lost' ? 'See what happened' : 'Next day'
+  const lines = METERS.filter((m) => m.key !== 'food' || game.hasFood).map((m) => changeLine(m.label, Math.round(r.before[m.key]), Math.round(r.after[m.key])))
   return (
     <main className="app">
-      <h2>Day {r.day} report</h2>
+      <div className="row between">
+        <h2>Day {r.day} report</h2>
+        <Speak text={`Day ${r.day} report. ${lines.join(' ')}`} />
+      </div>
       <div className="chips">
         <span className="chip">
           {r.sunny ? <Sun size={18} color="var(--sun)" aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
@@ -389,18 +219,12 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
       {r.storm && <StormPanel game={game} index={r.storm.index} />}
       {r.radioWorked && <RadioCall game={game} day={r.day} />}
       <ul className="list">
-        {METERS.filter((m) => m.key !== 'food' || game.hasFood).map(({ key, label, Icon, color }) => {
-          const a = Math.round(r.before[key])
-          const b = Math.round(r.after[key])
-          return (
-            <li key={key} className="change">
-              <Icon size={24} color={color} aria-hidden="true" />
-              <span>
-                {label} went from {a} to {b}.
-              </span>
-            </li>
-          )
-        })}
+        {METERS.filter((m) => m.key !== 'food' || game.hasFood).map(({ key, Icon, color }, i) => (
+          <li key={key} className="change">
+            <Icon size={24} color={color} aria-hidden="true" />
+            <span>{lines[i]}</span>
+          </li>
+        ))}
       </ul>
       {card && r.went && (
         <p>
@@ -422,7 +246,10 @@ export function Why({ game, onNext, onData }: { game: GameState; onNext: () => v
   const why = explain(game)
   return (
     <main className="app">
-      <h2>Why it happened</h2>
+      <div className="row between">
+        <h2>Why it happened</h2>
+        <Speak text={`${why.steps.map((s) => s.text).join(' ')} ${why.tip}`} />
+      </div>
       <p>The {LABEL[why.loss].toLowerCase()} bar ran out. Here is the chain.</p>
       <div className="stack">
         {why.steps.map((s, i) => (
@@ -435,7 +262,7 @@ export function Why({ game, onNext, onData }: { game: GameState; onNext: () => v
         ))}
       </div>
       <div className="orbi">
-        <Rocket size={22} color="var(--sun)" className="icon" aria-hidden="true" />
+        <OrbiFace look="open" size={48} />
         <p>
           <b>ORBI:</b> {why.tip}
         </p>

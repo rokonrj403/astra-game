@@ -4,12 +4,15 @@ import { makeRng } from '../engine/rng'
 import type { Choice, GameState, Mode } from '../engine/types'
 import { loadSun, type SunView } from '../live/sun'
 import { browserStore, readJSON, writeJSON } from '../live/store'
+import { Base } from './base'
 import { DataPage } from './DataPage'
-import { Base, ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
+import { Settings, Teachers } from './pages'
+import { ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
+import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
 
-type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards'
-const OVERLAYS: Screen[] = ['data', 'sun', 'cards']
+type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers'
+const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers']
 const CARDS_KEY = 'astra-cards-v1'
 
 /** Storms that really reached the base in this game. */
@@ -27,6 +30,7 @@ export function App() {
   const [game, setGame] = useState<GameState | null>(null)
   const [sun, setSun] = useState<SunView | null>(null)
   const [met, setMet] = useState<string[]>(() => readJSON<string[]>(browserStore(), CARDS_KEY) ?? [])
+  const [prefs, setPrefs] = useState<Prefs>(loadPrefs)
 
   useEffect(() => {
     let alive = true
@@ -39,6 +43,11 @@ export function App() {
   const open = (s: Screen) => {
     setBack(screen)
     setScreen(s)
+  }
+
+  const changePrefs = (p: Prefs) => {
+    setPrefs(p)
+    savePrefs(p)
   }
 
   const begin = (mode: Mode) => {
@@ -71,7 +80,16 @@ export function App() {
   let other: React.ReactNode = null
   switch (screen) {
     case 'start':
-      other = <Start onPlay={() => setScreen('place')} onData={() => open('data')} onSun={() => open('sun')} onCards={() => open('cards')} />
+      other = (
+        <Start
+          onPlay={() => setScreen('place')}
+          onData={() => open('data')}
+          onSun={() => open('sun')}
+          onCards={() => open('cards')}
+          onSettings={() => open('settings')}
+          onTeachers={() => open('teachers')}
+        />
+      )
       break
     case 'place':
       other = (
@@ -105,18 +123,24 @@ export function App() {
     case 'cards':
       other = <StormCards met={met} onBack={() => setScreen(back)} />
       break
+    case 'settings':
+      other = <Settings prefs={prefs} onChange={changePrefs} onBack={() => setScreen(back)} />
+      break
+    case 'teachers':
+      other = <Teachers onBack={() => setScreen(back)} onData={() => open('data')} />
+      break
     case 'play':
       break
   }
 
   return (
-    <>
+    <PrefsContext.Provider value={prefs}>
       {keepBase && game && (
         <div hidden={screen !== 'play'}>
           <Base key={game.day} game={game} sun={sun} onShare={share} onData={() => open('data')} onSun={() => open('sun')} />
         </div>
       )}
       {other}
-    </>
+    </PrefsContext.Provider>
   )
 }

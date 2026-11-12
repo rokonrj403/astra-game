@@ -31,7 +31,9 @@ describe('screens', () => {
     const text = document.body.textContent ?? ''
     expect(text).toContain('not made or endorsed by NASA')
     expect(text).toContain('Claude')
-    expect(text).toContain('Kokoro-82M')
+    // The game has no Kokoro audio (only the video does), so it must not claim Kokoro voices.
+    expect(text).toContain('your device’s voice')
+    expect(text).not.toContain('Kokoro')
   })
 
   it('the place screen names the 9 candidate regions without promising a landing', () => {
@@ -56,7 +58,7 @@ describe('screens', () => {
   it('the base screen shows the forecast and the 6 blocks before sharing power', () => {
     startGame('Cadet')
     expect(screen.getByText(/Day 1 of 10/)).toBeTruthy()
-    expect(screen.getAllByText(/Forecast|Stays the same/).length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText(/^Forecast/).length).toBeGreaterThan(0)
     expect(screen.getByText('6 left')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
     expect(screen.getByText('5 left')).toBeTruthy()
@@ -108,7 +110,9 @@ describe('screens', () => {
     tap('Where the data comes from')
     const text = document.body.textContent ?? ''
     for (const name of ['NASA DONKI', 'NOAA SWPC', 'BVAD', 'OSDR']) expect(text).toContain(name)
-    expect(text).toContain('Kokoro-82M')
+    expect(text).toContain('your device’s own voice')
+    expect(text).toContain('Open Peeps by Pablo Stanley (CC0)')
+    expect(text).not.toContain('Kokoro')
     expect(text).toContain('never these numbers')
     tap('Back')
     expect(screen.getByRole('heading', { name: 'ASTRA' })).toBeTruthy()
@@ -174,6 +178,103 @@ describe('screens', () => {
     expect(screen.getByText(/1 of 8 real storms/)).toBeTruthy()
     expect(document.querySelector('[data-status="PAST"]')).not.toBeNull()
     expect(screen.getAllByLabelText('Locked storm card')).toHaveLength(7)
+  })
+
+  it('the day report says "stayed at" when a bar does not change, never "from 0 to 0"', () => {
+    startGame('Cadet')
+    tap('Next day')
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/Radiation stayed at 0\./)
+    expect(text).not.toMatch(/went from (\d+) to \1\./)
+  })
+
+  it('the base screen has the base picture, 4 crew faces, ORBI and a sticky Next day button', () => {
+    startGame('Cadet')
+    expect(screen.getByRole('img', { name: /^The Moon base\./ })).toBeTruthy()
+    for (const who of ['Safia', 'Kofi', 'Leo', 'Mei']) expect(screen.getByRole('img', { name: new RegExp(`^${who},`) })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /ORBI/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Next day' }).parentElement?.className).toContain('sticky-cta')
+  })
+
+  it('the base picture follows the shield blocks you give', () => {
+    startGame('Cadet')
+    expect(screen.getByRole('img', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield is off.')
+    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
+    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
+    expect(screen.getByRole('img', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield has 2 blocks.')
+  })
+
+  describe('settings and read-aloud', () => {
+    const spoken: string[] = []
+    const mockSpeech = () => {
+      spoken.length = 0
+      const synth = { cancel: () => undefined, speak: (u: { text: string }) => void spoken.push(u.text) }
+      class Utterance {
+        lang = ''
+        rate = 1
+        constructor(public text: string) {}
+      }
+      vi.stubGlobal('speechSynthesis', synth)
+      vi.stubGlobal('SpeechSynthesisUtterance', Utterance)
+      Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true })
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: Utterance, configurable: true })
+    }
+    const unmockSpeech = () => {
+      // @ts-expect-error remove the fake
+      delete window.speechSynthesis
+      // @ts-expect-error remove the fake
+      delete window.SpeechSynthesisUtterance
+    }
+
+    it('read-aloud is Off by default: no speaker buttons', () => {
+      mockSpeech()
+      startGame('Cadet')
+      expect(screen.queryByRole('button', { name: 'Read aloud' })).toBeNull()
+      unmockSpeech()
+    })
+
+    it('turning it On shows speaker buttons, speaks the text when tapped, and is remembered', () => {
+      mockSpeech()
+      render(<App />)
+      tap('Settings')
+      const sw = screen.getByRole('switch', { name: 'Read aloud' })
+      expect(sw.getAttribute('aria-checked')).toBe('false')
+      fireEvent.click(sw)
+      expect(sw.getAttribute('aria-checked')).toBe('true')
+      expect(localStorage.getItem('astra-prefs-v1')).toContain('"readAloud":true')
+      tap('Hear a sample')
+      expect(spoken.at(-1)).toMatch(/read the words out loud/)
+      tap('Back')
+      tap('Play')
+      tap(/Malapert Massif/)
+      tap(/Cadet/)
+      fireEvent.click(screen.getAllByRole('button', { name: 'Read aloud' })[0]!)
+      expect(spoken.at(-1)).toMatch(/ORBI says: You have 6 blocks/)
+      unmockSpeech()
+    })
+
+    it('a device that cannot speak keeps read-aloud Off and says so', () => {
+      render(<App />)
+      tap('Settings')
+      const sw = screen.getByRole('switch', { name: 'Read aloud' }) as HTMLButtonElement
+      expect(sw.disabled).toBe(true)
+      expect(document.body.textContent).toContain('can not read aloud')
+    })
+  })
+
+  it('the For teachers page explains the game, is honest about play time and credits Open Peeps', () => {
+    render(<App />)
+    tap('For teachers')
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('Radiation')
+    expect(text).toContain('Mission Control')
+    expect(text).toContain('not timed a class session')
+    expect(text).not.toMatch(/10\s*[–-]\s*15 minutes/)
+    expect(text).toContain('no names and no photos of children')
+    expect(text).toContain('Open Peeps by Pablo Stanley (CC0)')
+    expect(text).toContain('not made or endorsed by NASA')
+    tap('Back')
+    expect(screen.getByRole('heading', { name: 'ASTRA' })).toBeTruthy()
   })
 
   it('uses the kid word rules: "day" not "sol", "tap" not "click"', () => {

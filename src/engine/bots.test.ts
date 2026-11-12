@@ -34,6 +34,9 @@ describe('bot balance: careful play wins', () => {
       expect(winRate('smart', mode)).toBeGreaterThanOrEqual(0.8)
     })
   }
+  it('the smart bot does not win every game in commander mode', () => {
+    expect(winRate('smart', 'commander')).toBeLessThan(1)
+  })
   it('never calling the radio is clearly worse than using it', () => {
     for (const mode of MODES) expect(winRate('noRadio', mode)).toBeLessThan(winRate('smart', mode) - 0.15)
   })

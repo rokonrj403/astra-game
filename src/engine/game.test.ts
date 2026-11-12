@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeRng } from './rng'
 import { activeWarning, badges, currentCard, explain, newGame, radioAvailable, radioDelay, score, step } from './game'
-import { BLOCKS } from './constants'
+import { BLOCKS, MODES } from './constants'
 import type { Choice, GameState, Jobs, StormPlan } from './types'
 
 const J = (air = 0, shield = 0, plants = 0, radio = 0): Jobs => ({ air, shield, plants, radio })
@@ -149,7 +149,7 @@ describe('step: storms', () => {
 
   it('Commander storms are stronger than Cadet storms', () => {
     const k = withStorms(newGame({ mode: 'commander', siteId: 'region-3', seed: 2 }), storm(1, 'small', [1]))
-    expect(step(k, C(J(0, 2)), rng()).radiation).toBeCloseTo(100 * 1.15 * 0.35, 5)
+    expect(step(k, C(J(0, 2)), rng()).radiation).toBeCloseTo(100 * MODES.commander.stormBoost * 0.35, 5)
   })
 
   it('radiation drains away on a calm day', () => {

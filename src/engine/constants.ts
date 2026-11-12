@@ -25,7 +25,7 @@ export const RADIATION_RECOVERY = 4
 
 export const MODES: Record<Mode, { days: number; hasFood: boolean; stormBoost: number; lookahead: number; stormCount: number }> = {
   cadet: { days: 10, hasFood: false, stormBoost: 1, lookahead: 3, stormCount: 1 },
-  commander: { days: 20, hasFood: true, stormBoost: 1.15, lookahead: 2, stormCount: 2 },
+  commander: { days: 20, hasFood: true, stormBoost: 2.6, lookahead: 2, stormCount: 2 },
 }
 
 export const RADIO_ONE_WAY_S = 1.28
@@ -33,3 +33,9 @@ export const MOON_DISTANCE_KM = 384400
 export const RADIO_SOURCE = 'NASA Moon Fact Sheet: mean distance 384,400 km. Radio travels at the speed of light, about 1.28 seconds one way.'
 
 export const STORM_SCORE = 3
+
+/** Words shown on the mode cards. Kept here so a test can check them. */
+export const MODE_CARDS: Record<Mode, { name: string; lines: string[] }> = {
+  cadet: { name: 'Cadet', lines: ['10 days', 'One storm', 'No food bar'] },
+  commander: { name: 'Commander', lines: ['20 days', 'Two storms', 'Stronger storms', 'Food bar'] },
+}

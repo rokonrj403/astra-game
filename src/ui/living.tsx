@@ -209,7 +209,7 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
       <main className="app living">
         {dayOnly}
         <MoonBaseScene model={{ ...sceneModelFromGame(game, {}), flare: flare ?? sceneModelFromGame(game, {}).flare }} reveal={revealFromRecord(last, side)} calm={calm} />
-        <MeterStrip values={meters(game)} hasFood={game.hasFood} />
+        <MeterStrip values={meters(game)} hasFood={game.hasFood} science={{ value: game.science, goal: game.goal }} />
         <div className="sheet">
           <DaySummary game={game} />
           <NextButton game={game} onNext={finishDay} />
@@ -246,7 +246,7 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
           </CrewBubble>
         )}
       </MoonBaseScene>
-      <MeterStrip values={meters(game)} hasFood={game.hasFood} />
+      <MeterStrip values={meters(game)} hasFood={game.hasFood} science={{ value: game.science, goal: game.goal }} />
       <PowerTray blocks={left} calm={calm} resolve={(x, y) => scene.current?.jobAt(x, y) ?? null} centerOf={(t) => scene.current?.centerOf(t) ?? null} onDrop={add} onHover={setHot} />
       <div className="sticky-cta">
         <button className="primary big" onClick={next} aria-label="Next day">

@@ -1382,8 +1382,8 @@ button:active:not(:disabled) {
 }
 /* The bubble rides the ground band under the buildings, so the buildings (the drop targets) and the Sun stay uncovered. */
 .living .sc-bubble {
-  left: 8px !important;
-  width: calc(100% - 16px) !important;
+  left: 56px !important;
+  width: calc(100% - 64px) !important;
   top: auto !important;
   bottom: 6px !important;
   padding: 6px 8px;
@@ -1401,4 +1401,221 @@ button:active:not(:disabled) {
   text-align: left;
   font-size: 0.95rem;
   line-height: 1.2;
+}
+
+/* Choose a place: a stylised map of the South Pole with 9 pins. */
+.polemap {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.polemap-art {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.place.pin {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 3px;
+  padding: 5px 6px;
+  min-height: 62px;
+  background: rgba(15, 26, 51, 0.92);
+  border-radius: 14px;
+}
+.place.pin[aria-pressed='true'] {
+  border-color: var(--sun);
+  background: var(--panel-2);
+  z-index: 2;
+  box-shadow: 0 0 0 3px var(--sun);
+}
+.mini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mini .bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: #34476e;
+  overflow: hidden;
+}
+.mini .bar i {
+  display: block;
+  height: 100%;
+}
+.pinname {
+  font-size: 0.875rem;
+  line-height: 1.1;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+.chosen {
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 150px;
+  justify-content: center;
+}
+.chosen .calm {
+  align-self: center;
+}
+.landscape {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Why: three wide pictures, one under the other, filling the screen. */
+.why .strip {
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;
+  flex: 1;
+  gap: 10px;
+}
+.why .panel {
+  grid-template-rows: 1fr auto;
+  padding: 6px 6px 8px;
+  min-height: 0;
+}
+.why .panel .art {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0f1a33;
+}
+.whyart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.whyart.icon {
+  display: grid;
+  place-items: center;
+}
+
+/* End: the base in its final state, with the results laid over it. */
+.finale {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.finale-over {
+  position: absolute;
+  right: 16px;
+  top: 28%;
+  pointer-events: none;
+}
+.finale-over .landing {
+  animation: ship-land 1.6s ease-out both;
+}
+.finale-over .flag {
+  animation: flag-up 0.8s ease-out both;
+}
+@keyframes ship-land {
+  from {
+    transform: translateY(-140px) scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes flag-up {
+  from {
+    transform: translateY(24px) scaleY(0.2);
+    opacity: 0;
+  }
+}
+.finale-science {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 26, 51, 0.8);
+  border-radius: 999px;
+  padding: 4px 16px 4px 10px;
+}
+.finale-science b {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+.finale .stats {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: auto;
+}
+.finale .stat {
+  background: rgba(15, 26, 51, 0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .finale-over .landing,
+  .finale-over .flag {
+    animation: none;
+  }
+}
+.landscape {
+  border-radius: 14px;
+}
+.finale .stats {
+  left: 64px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.finale .stat {
+  padding: 6px 2px;
+}
+.ship-down {
+  animation: ship-land 1.8s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ship-down {
+    animation: none;
+  }
+}
+.why {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.why .strip {
+  min-height: 0;
+}
+.why .panel .art {
+  position: relative;
+}
+.why .whyart {
+  position: absolute;
+  inset: 0;
+}
+
+/* Mode choice: two big cards that share the screen. */
+.modes .choices {
+  flex: 1;
+  grid-template-rows: 1fr 1fr;
+}
+.modes .choice {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+.modes .modeart {
+  display: grid;
+  place-items: center;
+}
+.modes .modeart svg {
+  width: 96px;
+  height: 96px;
 }

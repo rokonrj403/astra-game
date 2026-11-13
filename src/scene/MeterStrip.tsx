@@ -1,4 +1,4 @@
-import { AlertTriangle, Radiation, Sprout, Wind, Zap, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Radiation, Sparkles, Sprout, Wind, Zap, type LucideIcon } from 'lucide-react'
 import { HIGH_RADIATION, LOW } from '../ui/look'
 
 export interface MeterValues {
@@ -20,7 +20,7 @@ const ROWS: { key: keyof MeterValues; Icon: LucideIcon; color: string; label: st
  * A bar in the danger zone also gets a warning triangle, so danger is a shape and not only a colour.
  * Segments switch on and off with a short stagger, so a day change "ticks".
  */
-export function MeterStrip({ values, hasFood = true }: { values: MeterValues; hasFood?: boolean }) {
+export function MeterStrip({ values, hasFood = true, science }: { values: MeterValues; hasFood?: boolean; science?: { value: number; goal: number } }) {
   return (
     <div className="sc-meters" role="group" aria-label="Base bars">
       {ROWS.filter((r) => r.key !== 'food' || hasFood).map(({ key, Icon, color, label }) => {
@@ -39,6 +39,16 @@ export function MeterStrip({ values, hasFood = true }: { values: MeterValues; ha
           </div>
         )
       })}
+      {science && (
+        <div className="sc-meter sc-science" role="meter" aria-label="Science goal" aria-valuemin={0} aria-valuemax={science.goal} aria-valuenow={science.value} aria-valuetext={`${science.value} of ${science.goal}`}>
+          <Sparkles size={20} color="var(--sun, #E69F00)" aria-hidden="true" />
+          <span className="sc-segs" style={{ ['--c' as string]: 'var(--sun, #E69F00)' }}>
+            {Array.from({ length: 10 }, (_, i) => (
+              <i key={i} className={i < Math.floor((10 * science.value) / science.goal) ? 'on' : undefined} />
+            ))}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

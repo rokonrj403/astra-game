@@ -6,18 +6,17 @@ import {
   BadgeCheck,
   BookOpen,
   Check,
-  Cloud,
   CloudRain,
   Database,
   Footprints,
   GraduationCap,
+  Flag,
   Globe,
   House,
   Info,
   Layers,
   Minus,
   Play,
-  Radiation,
   Radio,
   Rocket,
   Settings as SettingsIcon,
@@ -38,7 +37,11 @@ import { BaseScene, OrbiFace } from './art'
 import { METERS } from './base'
 import { revealCue } from './cues'
 import { Celebrate } from './motion'
-import { FlareArt, FlareSun, GuessReveal } from './pictos'
+import { Landscape, PoleMap } from './polemap'
+import { CloudPanelArt, FlarePanelArt, RanOutArt, RaysPanelArt, SafeArt, ShipArt, type RaysStory } from './whystrip'
+import { MoonBaseScene, sceneModelFromGame, type SceneModel } from '../scene'
+import { prefersReducedMotion } from './motion'
+import { BurstArt, FlareSun, GuessReveal } from './pictos'
 import { sfx } from './sfx'
 import { Speak } from './speech'
 import { when } from './sunscreens'
@@ -46,22 +49,6 @@ import type { SceneState } from './look'
 
 export const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
 const ABOUT = `${NASA_NOTE} Made with help from Claude AI. Read-aloud uses your device’s voice.`
-const percent = (x: number) => Math.round(x * 100)
-
-/** A bar made of 5 blocks, filled to a share: the picture version of "28 in every 100". */
-function Fill({ value, color, Icon, label }: { value: number; color: string; Icon: LucideIcon; label: string }) {
-  const on = Math.max(0, Math.min(5, Math.round(value * 5)))
-  return (
-    <span className="fill5" role="img" aria-label={`${label}: ${percent(value)} in every 100 days`}>
-      <Icon size={20} color={color} aria-hidden="true" />
-      <span className="blocks" style={{ ['--c' as string]: color }}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <i key={i} className={i < on ? 'on' : undefined} />
-        ))}
-      </span>
-    </span>
-  )
-}
 
 /* ---------- Start ---------- */
 
@@ -134,22 +121,23 @@ export function ChoosePlace({ onPick, onBack }: { onPick: (siteId: string) => vo
           NASA’s 9 candidate landing regions near the Moon’s South Pole. Sun and Earth views are for the best spot near each region, from NASA Moon maps.
         </p>
       )}
-      <div className="places">
-        {sites.map((s) => (
-          <button key={s.id} className="place" aria-pressed={sel === s.id} aria-label={s.name} title={s.name} onClick={() => setSel(s.id)}>
-            <Fill value={s.sunShare.value} color="var(--sun)" Icon={Sun} label="Sun" />
-            <Fill value={s.earthShare.value} color="var(--radio)" Icon={Globe} label="Earth in view" />
-          </button>
-        ))}
+      <PoleMap selected={sel} onSelect={setSel} />
+      <div className="chosen">
+        {site ? (
+          <>
+            <Landscape sun={site.sunShare.value} earth={site.earthShare.value} />
+            <b>{site.name}</b>
+            <button className="primary" onClick={() => onPick(site.id)}>
+              <ArrowRight size={22} aria-hidden="true" /> Go
+            </button>
+          </>
+        ) : (
+          <span className="calm" role="img" aria-label="Tap a place on the map">
+            <Globe size={34} color="var(--air)" aria-hidden="true" />
+            <ArrowUp size={26} aria-hidden="true" />
+          </span>
+        )}
       </div>
-      {site && (
-        <div className="chosen">
-          <b>{site.name}</b>
-          <button className="primary" onClick={() => onPick(site.id)}>
-            <ArrowRight size={22} aria-hidden="true" /> Go
-          </button>
-        </div>
-      )}
     </main>
   )
 }
@@ -158,7 +146,7 @@ export function ChoosePlace({ onPick, onBack }: { onPick: (siteId: string) => vo
 
 export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBack: () => void }) {
   return (
-    <main className="app">
+    <main className="app modes">
       <button className="link" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
         Back
       </button>
@@ -168,6 +156,9 @@ export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBa
           return (
             <button key={m} className="choice mode" onClick={() => onPick(m)} aria-label={`${MODE_CARDS[m].name}: ${MODE_CARDS[m].lines.join(', ')}`}>
               <span className="name">{MODE_CARDS[m].name}</span>
+              <span className="modeart" aria-hidden="true">
+                <BurstArt cls={m === 'commander' ? 'X5.0' : 'M5.0'} />
+              </span>
               <span className="row" aria-hidden="true">
                 <span className="daydots">
                   {Array.from({ length: rules.days }, (_, i) => (
@@ -421,6 +412,7 @@ export function Why({ game, onNext, onData }: { game: GameState; onNext: () => v
   const Icon = meter?.Icon ?? Star
   const color = meter?.color ?? 'var(--sun)'
   const storyRays = why.loss === 'radiation' && hit
+  const story: RaysStory | null = storyRays && own && hit ? { cls: own.class, cloud: own.cloud, side: game.mode === 'commander' ? (own.side === 'west' ? 'west' : 'east') : null, shield: hit.shield, incoming: hit.incoming } : null
   const long = why.steps.map((s) => s.text).join(' ')
   return (
     <main className="app why">
@@ -435,37 +427,28 @@ export function Why({ game, onNext, onData }: { game: GameState; onNext: () => v
       </div>
 
       <div className="strip" role="group" aria-label="Why it happened">
-        {storyRays ? (
+        {storyRays && own ? (
           <>
             <Panel n={1} words="A flare">
-              {own ? <FlareArt flare={own} showSide={game.mode === 'commander'} /> : <Radiation size={56} color="var(--radiation)" />}
+              <FlarePanelArt story={story!} showSide={game.mode === 'commander'} />
             </Panel>
-            <Panel n={2} words="Rays travel">
-              <span className="travel" aria-hidden="true">
-                <Cloud size={44} color="#E8E6F0" />
-                <ArrowRight size={34} />
-                <Globe size={44} color="var(--air)" />
-              </span>
+            <Panel n={2} words={own.cloud ? 'Gas cloud travels' : 'No gas cloud'}>
+              <CloudPanelArt story={story!} />
             </Panel>
-            <Panel n={3} words={`Shield ${hit.shield}`}>
-              <span className="dots big" aria-hidden="true">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <i key={i} className={i < hit.shield ? 'shield on' : 'shield'} />
-                ))}
-              </span>
-              <CloudRain size={44} color="var(--radiation)" aria-hidden="true" />
+            <Panel n={3} words={`Shield ${hit!.shield}`}>
+              <RaysPanelArt story={story!} />
             </Panel>
           </>
         ) : (
           <>
             <Panel n={1} words={why.loss === 'science' ? 'Goal missed' : `${LABEL[why.loss]} ran out`}>
-              <Icon size={60} color={color} aria-hidden="true" />
+              <RanOutArt Icon={Icon} color={color} />
             </Panel>
             <Panel n={2} words="Rescue ship">
-              <Rocket size={60} color="var(--sun)" aria-hidden="true" />
+              <ShipArt />
             </Panel>
             <Panel n={3} words="Nobody hurt">
-              <Check size={60} color="var(--plants)" aria-hidden="true" />
+              <SafeArt />
             </Panel>
           </>
         )}
@@ -512,25 +495,34 @@ export function Complete({ game, onAgain, onData }: { game: GameState; onAgain: 
     else missionFailedGentle()
   }, [won])
   const stats: [LucideIcon, string, string][] = [
-    [Star, `${score(game)}`, 'Score'],
-    [Sparkles, `${game.science}/${game.goal}`, 'Science and goal'],
     [CloudRain, `${stormsSurvived(game)}/${game.storms.length}`, 'Storms survived'],
     [Sun, `${game.history.length}`, 'Days played'],
+    [Trophy, `${score(game)}`, 'Score'],
   ]
+  // The base in its final state: crew waving if the mission was won, worried and sheltering if the rescue ship came.
+  const base: SceneModel = sceneModelFromGame(game, {})
+  const end: SceneModel = { ...base, flare: null, storm: 'none', moods: won ? { safia: 'happy', kofi: 'happy', leo: 'happy', mei: 'happy' } : { safia: 'worried', kofi: 'worried', leo: 'worried', mei: 'worried' } }
   return (
     <main className="app end" aria-label={won ? `Mission complete at ${site?.name ?? 'the base'}` : 'The rescue ship is here'}>
       {won && <Celebrate />}
-      <div className="trophy" aria-hidden="true">
-        {won ? <Trophy size={96} color="var(--sun)" /> : <Rocket size={96} color="var(--sun)" />}
-      </div>
       <h2>{won ? 'Mission complete' : 'Rescue ship'}</h2>
-      <div className="stats">
-        {stats.map(([Icon, value, label]) => (
-          <div key={label} className="stat" role="img" aria-label={`${label}: ${value}`}>
-            <Icon size={26} aria-hidden="true" />
-            <b>{value}</b>
-          </div>
-        ))}
+      <div className="finale">
+        <MoonBaseScene model={end} calm={prefersReducedMotion()} />
+        <div className="finale-over" aria-hidden="true">
+          {won ? <Flag size={64} color="var(--sun)" className="flag" /> : <Rocket size={72} color="var(--sun)" className="landing" />}
+        </div>
+        <div className="finale-science" role="img" aria-label={`Science: ${game.science} of ${game.goal}`}>
+          <Star size={44} color="var(--sun)" fill="var(--sun)" aria-hidden="true" />
+          <b>{game.science}</b>
+        </div>
+        <div className="stats">
+          {stats.map(([Icon, value, label]) => (
+            <div key={label} className="stat" role="img" aria-label={`${label}: ${value}`}>
+              <Icon size={26} aria-hidden="true" />
+              <b>{value}</b>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="badges">
         {badges(game).map((b, i) => {

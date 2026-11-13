@@ -105,7 +105,7 @@ export function Sun({ x, y, sunny, warn = false, flare = null, showSide = false,
   const fill = warn || flare ? PAL.warn : PAL.sun
   const body = (
     <>
-      <circle className="sc-breathe" r={SUN_R + 14} fill="#FFD36B" opacity={sunny ? 0.35 : 0.1} />
+      <circle className="sc-breathe" r={SUN_R + 14} fill="#F0A900" opacity={sunny ? 0.28 : 0.1} />
       <circle r={SUN_R} fill={fill} opacity={sunny ? 1 : 0.55} />
       {!sunny && (
         // A dim Sun is also marked by stripes across it, not by colour alone.
@@ -135,16 +135,29 @@ export function Sun({ x, y, sunny, warn = false, flare = null, showSide = false,
 /** Tiny optional labels, shown only after a tap or long-press. With no tags (the default) the scene has no words at all. */
 export function ClueTags({ tags, open, x, y }: { tags: string[]; open: boolean; x: number; y: number }) {
   if (!open || tags.length === 0) return null
-  const wide = 8 * Math.max(...tags.map((t) => t.length)) + 16
+  const isSide = (t: string) => t === 'West' || t === 'East'
+  const words = tags.filter((t) => !isSide(t))
+  const wide = 8 * Math.max(0, ...words.map((t) => t.length)) + 16
   const left = Math.max(6, Math.min(W - wide - 6, x - wide / 2))
   return (
     <g className="sc-tags" data-tags="open">
       {tags.map((t, i) => (
-        <g key={t} transform={`translate(${left} ${y + i * 22})`}>
-          <rect width={wide} height="19" rx="9.5" fill={PAL.night} stroke={PAL.line} strokeWidth="1.5" opacity="0.95" />
-          <text x={wide / 2} y="13.5" textAnchor="middle" fontSize="12" fontWeight="700" fill={PAL.cream}>
-            {t}
-          </text>
+        <g key={t} transform={`translate(${left} ${y + i * 24})`}>
+          {isSide(t) ? (
+            // The side the flare came from: a Sun disc with that half lit (West is the right half), so it needs no word.
+            <g role="img" aria-label={`${t} side of the Sun`}>
+              <rect width="44" height="22" rx="11" fill={PAL.night} stroke={PAL.line} strokeWidth="1.5" opacity="0.95" />
+              <circle cx="22" cy="11" r="8" fill="none" stroke={PAL.cream} strokeWidth="1.5" />
+              <path d={t === 'West' ? 'M22 3 A8 8 0 0 1 22 19 Z' : 'M22 3 A8 8 0 0 0 22 19 Z'} fill={PAL.warn} />
+            </g>
+          ) : (
+            <>
+              <rect width={wide} height="19" rx="9.5" fill={PAL.night} stroke={PAL.line} strokeWidth="1.5" opacity="0.95" />
+              <text x={wide / 2} y="13.5" textAnchor="middle" fontSize="12" fontWeight="700" fill={PAL.cream}>
+                {t}
+              </text>
+            </>
+          )}
         </g>
       ))}
     </g>

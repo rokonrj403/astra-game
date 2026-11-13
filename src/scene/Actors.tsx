@@ -5,11 +5,11 @@ import { PAL } from './tokens'
 /** Where each crew member stands, and where they go when a storm is here (inside the dome, near the habitat). */
 export const CREW_POS: Record<CrewId, { home: { x: number; y: number }; shelter: { x: number; y: number } }> = {
   safia: { home: { x: 266, y: 228 }, shelter: { x: 236, y: 236 } },
-  kofi: { home: { x: 216, y: 330 }, shelter: { x: 150, y: 226 } },
+  kofi: { home: { x: 87, y: 238 }, shelter: { x: 150, y: 226 } },
   leo: { home: { x: 180, y: 214 }, shelter: { x: 180, y: 214 } },
   mei: { home: { x: 328, y: 208 }, shelter: { x: 212, y: 226 } },
 }
-export const ORBI_POS = { x: 146, y: 322 } as const
+export const ORBI_POS = { x: 8, y: 350 } as const
 export const CREW_SIZE = 34
 
 const NAME: Record<CrewId, string> = { safia: 'Safia', kofi: 'Kofi', leo: 'Leo', mei: 'Mei' }

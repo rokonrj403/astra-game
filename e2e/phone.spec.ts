@@ -58,12 +58,29 @@ test.afterAll(() => {
  *  - every button is at least 44px tall and wide
  * It also saves a screenshot to e2e-shots/ so a person can look.
  */
+// Child screens must not leave the bottom of the phone empty: the lowest thing on screen reaches at least 75% of the 740 px height.
+const FILLS = new Set(['01-start', '02-place', '03-mode', '04-base-day1', '05-base-blocks', '08-report', '09-play-guess', '10-report-storm', '12-why', '13-end'])
+
 async function audit(page: Page, name: string) {
   await page.waitForLoadState('networkidle')
   const words = await countWords(page)
   wordLog.push({ screen: name, words })
   if (BUDGET[name] !== undefined) expect(words, `${name} has ${words} visible words`).toBeLessThanOrEqual(BUDGET[name])
   await page.screenshot({ path: `e2e-shots/${name}.png`, fullPage: true })
+  if (FILLS.has(name)) {
+    const lowest = await page.evaluate(() => {
+      let max = 0
+      for (const el of document.querySelectorAll<HTMLElement>('main *')) {
+        if (el.closest('[hidden]')) continue
+        const cs = getComputedStyle(el)
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue
+        const b = el.getBoundingClientRect()
+        if (b.width > 0 && b.height > 0) max = Math.max(max, b.bottom + window.scrollY)
+      }
+      return max
+    })
+    expect(lowest, `${name}: content ends at ${Math.round(lowest)} px of 740 (more than a quarter of the phone is empty)`).toBeGreaterThanOrEqual(555)
+  }
   const issues = await page.evaluate((width) => {
     const out: string[] = []
     for (const img of document.querySelectorAll('img')) if (!img.complete || img.naturalWidth === 0) out.push(`picture did not load: ${img.alt}`)

@@ -68,8 +68,9 @@ describe('screens', () => {
     const tiles = document.querySelectorAll('.place')
     expect(tiles).toHaveLength(9)
     const words = (document.querySelector('main')!.textContent ?? '').trim().split(/\s+/).filter(Boolean)
-    expect(words.length).toBeLessThanOrEqual(12)
-    expect(document.body.textContent).not.toContain('Malapert')
+    expect(words.length).toBeLessThanOrEqual(12) // nine short map names and nothing else
+    expect(document.body.textContent).toContain('Malapert')
+    expect(document.body.textContent).not.toContain('Malapert Massif') // the full name shows once a pin is picked
     tap(/Malapert Massif/)
     expect(screen.getByText('Malapert Massif')).toBeTruthy()
     tap('About these places')

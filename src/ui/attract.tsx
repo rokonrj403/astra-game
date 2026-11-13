@@ -42,7 +42,7 @@ export function attractModel(phase: AttractPhase): SceneModel {
 }
 
 export function attractReveal(phase: AttractPhase, cycle: number): RevealView | null {
-  return phase === 'rays' ? { kind: 'rays', shield: 6, count: ATTRACT_RAYS, side: 'west', key: `attract-${cycle}` } : null
+  return phase === 'rays' ? { kind: 'rays', shield: 6, count: ATTRACT_RAYS, side: 'west', fromSun: true, key: `attract-${cycle}` } : null
 }
 
 /** Runs the loop. With `still` (reduced motion or Calm) nothing ever changes: one calm picture. */

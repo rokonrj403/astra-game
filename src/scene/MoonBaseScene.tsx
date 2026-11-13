@@ -8,7 +8,7 @@ import type { CrewId, FlareView, RevealView, SceneModel, Target } from './model'
 import { TARGETS } from './model'
 import { isLowEnd } from './motion'
 import { ClueTags, Sky, Sun } from './Sky'
-import { H, RAYS, W, sunPos } from './tokens'
+import { H, RAYS, SUN_R, W, sunPos } from './tokens'
 import { Walker, WalkTrail, type WalkKind, type WalkMode } from './Walker'
 import { clientToScene, hitZone, zoneCenter, ZONES } from './zones'
 import './scene.css'
@@ -109,7 +109,7 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
   const cloudState: CloudState = reveal ? (reveal.kind === 'clear' ? 'pass' : 'arrive') : 'creep'
 
   const count = reveal?.count ?? (cheapNow ? Math.round(RAYS / 2) : RAYS)
-  const rays = useMemo(() => (reveal?.kind === 'rays' ? planRays(reveal.shield, count, reveal.side ?? null, sun.x) : []), [reveal, count, sun.x])
+  const rays = useMemo(() => (reveal?.kind === 'rays' ? planRays(reveal.shield, count, reveal.side ?? null, sun.x, reveal.fromSun ? { x: sun.x, y: sun.y + SUN_R * 0.7 } : undefined) : []), [reveal, count, sun.x, sun.y])
   const hits = useMemo(() => hitsPerSegment(rays), [rays])
   const hitAt = useMemo(() => hitTimes(rays), [rays])
   const charge = reveal ? reveal.shield : model.shield

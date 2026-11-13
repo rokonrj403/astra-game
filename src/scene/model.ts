@@ -40,6 +40,8 @@ export interface RevealView {
   count?: number
   /** Rays lean in from this side of the Sun. */
   side?: Side | null
+  /** Rays leave the Sun and fan out to the dome (the Start screen's show). The game's own reveal leaves this off. */
+  fromSun?: boolean
   /** Change this to replay the reveal. */
   key: string | number
 }

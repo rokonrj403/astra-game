@@ -61,7 +61,7 @@ export interface Ray {
  * Plans the rays of a reveal. How many get through comes from the game's own table (particlePlan), so 3 blocks really stop about 2 in 3.
  * Rays that stop are aimed at the lit segments, rays that get through at the unlit gaps, so the picture is honest about where the holes are.
  */
-export function planRays(shield: number, count = RAYS, side: Side | null = null, sunX: number = DOME.cx): Ray[] {
+export function planRays(shield: number, count = RAYS, side: Side | null = null, sunX: number = DOME.cx, origin?: { x: number; y: number }): Ray[] {
   const plan = particlePlan(shield, count)
   const lit = litSegments(shield)
   const unlit = Array.from({ length: SEGMENTS }, (_, i) => i).filter((i) => !lit.includes(i))
@@ -87,8 +87,9 @@ export function planRays(shield: number, count = RAYS, side: Side | null = null,
     const at = place(passes ? unlit : lit, k, total)
     const x = at.x
     const y = passes ? HORIZON + 6 + (k % 3) * 11 : domeTopY(x) - 1
-    const sx = (sunX - x) * 0.28 + lean
-    const sy = -14 - y
+    // With an origin (the Start screen), every ray leaves that point (the Sun's lower rim) and fans out to its spot on the dome.
+    const sx = origin ? origin.x - x : (sunX - x) * 0.28 + lean
+    const sy = origin ? origin.y - y : -14 - y
     const dist = Math.hypot(sx, sy)
     return { id, passes, x, y, sx, sy, delay: (id % 8) * 105 + Math.floor(id / 8) * 40, dur: Math.max(650, Math.min(1000, dist * 2.6)), seg: segmentForX(x) }
   }

@@ -2155,13 +2155,13 @@ body:has(.attract) .twin {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  background: #1b3772;
+  background: #17306a;
 }
 .attract-sky {
   flex: 1 1 0;
   min-height: 0;
   background-image: radial-gradient(circle at 12% 30%, #fff8e8 1.2px, transparent 2px), radial-gradient(circle at 34% 70%, #fff8e8 1px, transparent 2px), radial-gradient(circle at 58% 24%, #fff8e8 1.4px, transparent 2px),
-    radial-gradient(circle at 78% 62%, #fff8e8 1px, transparent 2px), radial-gradient(circle at 90% 18%, #fff8e8 1.2px, transparent 2px), radial-gradient(circle at 22% 86%, #fff8e8 1px, transparent 2px), linear-gradient(#070d1f, #1b3772);
+    radial-gradient(circle at 78% 62%, #fff8e8 1px, transparent 2px), radial-gradient(circle at 90% 18%, #fff8e8 1.2px, transparent 2px), radial-gradient(circle at 22% 86%, #fff8e8 1px, transparent 2px), linear-gradient(#070d1f, #17306a);
 }
 .attract-scene {
   flex: none;

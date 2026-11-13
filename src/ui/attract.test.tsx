@@ -67,6 +67,20 @@ describe('the attract loop plan', () => {
     expect(rays.filter((x) => x.passes).length).toBeLessThanOrEqual(1) // the game's own table: a full shield lets about 5 in 100 through
   })
 
+  it('the rays leave the Sun and fan out to the dome, none start above or beside it', () => {
+    const sun = { x: 180, y: 100 }
+    const rays = planRays(6, ATTRACT_RAYS, 'west', sun.x, sun)
+    expect(attractReveal('rays', 1)!.fromSun).toBe(true)
+    for (const r of rays) {
+      expect(r.x + r.sx).toBeCloseTo(sun.x, 5) // every streak starts at the Sun
+      expect(r.y + r.sy).toBeCloseTo(sun.y, 5)
+      expect(r.y).toBeGreaterThan(sun.y) // and ends below it
+    }
+    expect(new Set(rays.map((r) => Math.round(r.x))).size).toBeGreaterThan(5) // spread across the dome: a fan
+    const game = planRays(6, 14, null, 180)
+    expect(game.some((r) => Math.abs(r.x + r.sx - 180) > 1)).toBe(true) // the game's own reveal is unchanged
+  })
+
   it('has four crew to peek out, one per loop', () => {
     expect(PEEKERS).toHaveLength(4)
   })

@@ -140,6 +140,7 @@ describe('the data page', () => {
   it('shows the real base rates and where the site numbers come from', () => {
     vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')))
     render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
     fireEvent.click(screen.getByRole('button', { name: 'Where the data comes from' }))
     const text = document.body.textContent ?? ''
     expect(text).toContain('How often flares bring space rays')

@@ -1,25 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
   BadgeCheck,
-  BookOpen,
   Check,
   CloudRain,
   Database,
   Footprints,
-  GraduationCap,
   Flag,
   House,
   Info,
-  Layers,
   Minus,
   PawPrint,
   Play,
   Radio,
   Rocket,
-  Settings as SettingsIcon,
   Sparkles,
   Star,
   Sun,
@@ -32,8 +28,11 @@ import { MODE_CARDS, MODES, RADIO_SCIENCE, RADIO_SCIENCE_MAX } from '../engine/c
 import { badges, explain, radioDelay, score, stormsSurvived } from '../engine/game'
 import { flareById } from '../engine/flares'
 import type { BadgeId, DayRecord, GameState, Loss, Mode } from '../engine/types'
-import { missionFailedGentle } from '../audio'
-import { BaseScene, OrbiFace } from './art'
+import { astraMotif, missionFailedGentle, setMood } from '../audio'
+import { art } from '../scene/motion'
+import { AheadRow, AttractScene, GearSheet, JournalButton, SoundButton } from './attract'
+import { Paw } from './paw'
+import { OrbiFace } from './art'
 import { METERS } from './meters'
 import { revealCue } from './cues'
 import { Celebrate } from './motion'
@@ -45,14 +44,11 @@ import { BurstArt, FlareSun, GuessReveal } from './pictos'
 import { sfx } from './sfx'
 import { Speak } from './speech'
 import { when } from './sunscreens'
-import type { SceneState } from './look'
 
 export const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
 const ABOUT = `${NASA_NOTE} Made with help from Claude AI. Read-aloud uses your device’s voice.`
 
 /* ---------- Start ---------- */
-
-const IDLE_SCENE: SceneState = { sunny: true, earth: true, shield: 0, storm: 'none', powerLow: false, plantsHappy: true }
 
 export function Start({
   onPlay,
@@ -62,6 +58,8 @@ export function Start({
   onSettings,
   onTeachers,
   onJournal,
+  sound = true,
+  onSound = () => undefined,
 }: {
   onPlay: () => void
   onData: () => void
@@ -70,28 +68,60 @@ export function Start({
   onSettings: () => void
   onTeachers: () => void
   onJournal: () => void
+  sound?: boolean
+  onSound?: (on: boolean) => void
 }) {
-  const links: [() => void, LucideIcon, string][] = [
-    [onSun, Sun, 'Today’s Sun'],
-    [onCards, Layers, 'My storm cards'],
-    [onJournal, BookOpen, 'Flare Journal'],
-    [onSettings, SettingsIcon, 'Settings'],
-    [onTeachers, GraduationCap, 'For teachers'],
-    [onData, Database, 'Where the data comes from'],
-  ]
+  // Reduced motion or Calm: one still picture, no loop, no zoom.
+  const still = prefersReducedMotion()
+  const [leaving, setLeaving] = useState(false)
+  const [pawOn, setPawOn] = useState(false)
+  const tapped = useRef(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (still) return
+    const id = setInterval(() => setPawOn((p) => !p), 2600)
+    return () => clearInterval(id)
+  }, [still])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
+  /** The first tap anywhere wakes the audio: the ASTRA motif, then the calm bed fades in. Muted = nothing plays. */
+  const firstTap = () => {
+    if (tapped.current) return
+    tapped.current = true
+    astraMotif()
+    setTimeout(() => setMood('calm'), 700)
+  }
+  const play = () => {
+    if (leaving) return
+    if (still) return onPlay()
+    setLeaving(true) // the camera moves into the base for 600 ms, then the next screen
+    timer.current = setTimeout(onPlay, ZOOM_MS)
+  }
   return (
-    <main className="app start">
-      <BaseScene s={IDLE_SCENE} />
-      <h1>ASTRA</h1>
-      <button className="primary big" onClick={onPlay}>
-        <Play size={26} aria-hidden="true" /> Play
-      </button>
-      <div className="iconrow">
-        {links.map(([go, Icon, label]) => (
-          <button key={label} className="iconbtn big" onClick={go} aria-label={label} title={label}>
-            <Icon size={26} aria-hidden="true" />
-          </button>
-        ))}
+    <main className={`app start attract${leaving ? ' leaving' : ''}`} onClick={firstTap}>
+      <header className="starthead">
+        <SoundButton on={sound} onToggle={() => onSound(!sound)} />
+        <h1>ASTRA</h1>
+        <GearSheet onSun={onSun} onCards={onCards} onData={onData} onTeachers={onTeachers} onSettings={onSettings} />
+      </header>
+      <div className="attract-frame">
+        <div className="attract-sky" aria-hidden="true" />
+        <AttractScene still={still} />
+      </div>
+      <AheadRow />
+      <div className="playrow">
+        <span className="orbi-idle" aria-hidden="true">
+          <img src={art('orbi/orbi-open.webp')} alt="" width={64} height={64} />
+        </span>
+        <button className="primary big pulse" onClick={play}>
+          <Play size={26} aria-hidden="true" /> Play
+        </button>
+        <JournalButton onJournal={onJournal} />
+        {pawOn && !still && <Paw className="pawplay" left="86px" top="50%" />}
       </div>
       <p className="fineprint" aria-label={ABOUT}>
         Uses NASA data. Not endorsed by NASA.
@@ -99,6 +129,8 @@ export function Start({
     </main>
   )
 }
+
+const ZOOM_MS = 600
 
 /* ---------- Choose a place ---------- */
 

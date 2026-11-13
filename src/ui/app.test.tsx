@@ -18,7 +18,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const tap = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
+/** The adult pages sit behind the gear ("More") on the Start screen, so a tap on one opens the gear first. */
+const ADULT = /^(Where the data comes from|Today\u2019s Sun|My storm cards|For teachers|Settings)$/
+const tap = (name: string | RegExp) => {
+  if (typeof name === 'string' && ADULT.test(name) && !screen.queryByRole('button', { name }) && screen.queryByRole('button', { name: 'More' })) fireEvent.click(screen.getByRole('button', { name: 'More' }))
+  fireEvent.click(screen.getByRole('button', { name }))
+}
 
 function startGame(mode: 'Cadet' | 'Commander') {
   render(<App />)

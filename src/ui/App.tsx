@@ -108,6 +108,8 @@ export function App() {
           onSettings={() => open('settings')}
           onTeachers={() => open('teachers')}
           onJournal={() => open('journal')}
+          sound={prefs.sound}
+          onSound={(on) => changePrefs({ ...prefs, sound: on })}
         />
       )
       break

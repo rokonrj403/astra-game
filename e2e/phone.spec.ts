@@ -146,6 +146,11 @@ async function toBase(page: Page, mode: 'Cadet' | 'Commander') {
 test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async ({ page }) => {
   await page.goto('./')
   await audit(page, '01-start')
+  await page.getByRole('button', { name: 'More' }).click() // the adult pages sit behind one small gear
+  await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  for (const n of ['Today’s Sun', 'My storm cards', 'Where the data comes from', 'For teachers', 'Settings']) await expect(page.getByRole('button', { name: n })).toBeVisible()
+  await audit(page, '01b-start-gear')
+  await page.getByRole('button', { name: 'Close' }).click()
   await toBase(page, 'Commander')
   await expect(page.getByLabel('Day 1 of 20')).toBeVisible()
   await audit(page, '04-base-day1')
@@ -192,9 +197,11 @@ test('the Flare Journal fits the phone and is stickers, not sentences', async ({
 
 test('settings and for-teachers fit', async ({ page }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'More' }).click()
   await page.getByRole('button', { name: 'Settings' }).click()
   await audit(page, '15-settings')
   await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'More' }).click()
   await page.getByRole('button', { name: 'For teachers' }).click()
   for (const s of await page.locator('summary').all()) if (!(await s.evaluate((el) => (el.parentElement as HTMLDetailsElement).open))) await s.click()
   await audit(page, '16-teachers')
@@ -277,6 +284,7 @@ test(`a full ${mode} mission: every day, storm, radio call, why, end and card sc
   await audit(page, `13-end${sfx}`)
   expect(seen.has('storm'), 'a real storm should have reached the base').toBe(true)
   await page.getByRole('button', { name: 'Play again' }).click()
+  await page.getByRole('button', { name: 'More' }).click()
   await page.getByRole('button', { name: 'My storm cards' }).click()
   await audit(page, `14-storm-cards${sfx}`)
 })

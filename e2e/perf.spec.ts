@@ -97,6 +97,42 @@ test('frame rate with the CPU slowed 4 times: time-lapse and rays reveal', async
   expect(mean, 'mean frame rate at 4x CPU slowdown').toBeGreaterThan(15)
 })
 
+test('frame rate of the Start screen loop with the CPU slowed 4 times (a full 8-second loop and the Play zoom)', async ({ page }) => {
+  test.setTimeout(120_000)
+  const client = await page.context().newCDPSession(page)
+  await client.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+  await page.addInitScript(() => {
+    const w = window as unknown as { __frames: number[] }
+    w.__frames = []
+    const tick = (t: number) => {
+      w.__frames.push(t)
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+  await page.goto('./')
+  await expect(page.locator('.attract-scene')).toHaveAttribute('data-still', 'no')
+  await page.waitForTimeout(500)
+  await page.evaluate(() => ((window as unknown as { __frames: number[] }).__frames = []))
+  await page.waitForTimeout(9000) // one whole loop: flare, rays, wave
+  const loop = await page.evaluate(() => (window as unknown as { __frames: number[] }).__frames)
+  await page.evaluate(() => ((window as unknown as { __frames: number[] }).__frames = []))
+  // Tap from inside the page, so Playwright's own checks (slow with the CPU throttled) are not counted as dropped frames.
+  await page.evaluate(() => (document.querySelector('button.primary.big') as HTMLButtonElement).click())
+  await page.waitForTimeout(560) // the 600 ms camera move into the base, before the next screen mounts
+  const zoom = await page.evaluate(() => (window as unknown as { __frames: number[] }).__frames)
+  await page.locator('.polemap').first().waitFor()
+  const stats = (frames: number[]) => {
+    const d = frames.slice(1).map((t, i) => t - frames[i]!)
+    const secs = d.reduce((a, b) => a + b, 0) / 1000
+    return { fps: Math.round((d.length / secs) * 10) / 10, worstMs: Math.round(Math.max(...d)), over50ms: d.filter((x) => x > 50).length, seconds: Math.round(secs * 10) / 10 }
+  }
+  const result = { loop: stats(loop), playZoom560ms: stats(zoom) }
+  writeFileSync('e2e-shots/perf-title.json', JSON.stringify(result, null, 2))
+  console.log('PERF title 4x CPU throttle', JSON.stringify(result))
+  expect(result.loop.fps, 'Start loop fps at 4x CPU slowdown').toBeGreaterThan(50)
+})
+
 test('a whole Cadet mission with 3 to 5 seconds of thinking per day', async ({ page }) => {
   test.setTimeout(420_000)
   const thinking = [3000, 4000, 5000, 3500, 4500, 3000, 5000, 4000, 3500, 4500]

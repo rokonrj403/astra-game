@@ -134,6 +134,7 @@ describe('tap ORBI to hear', () => {
 describe('the Calm setting', () => {
   it('is Off by default, turns on from Settings, and is remembered', () => {
     render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
     const sw = screen.getByRole('switch', { name: 'Calm' })
     expect(sw.getAttribute('aria-checked')).toBe('false')

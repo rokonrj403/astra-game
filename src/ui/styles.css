@@ -1877,3 +1877,337 @@ html.calm *::after {
   width: 44px;
   height: 44px;
 }
+
+/* ---------- Start screen: the attract loop ---------- */
+.attract {
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 8px 16px 14px;
+}
+.starthead {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px;
+  align-items: center;
+  width: 100%;
+}
+.starthead h1 {
+  font-size: 2.2rem;
+}
+.iconbtn.corner {
+  width: 48px;
+  min-height: 48px;
+  justify-self: start;
+}
+.starthead .iconbtn.corner:last-child {
+  justify-self: end;
+}
+.attract-frame {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  contain: paint;
+  flex: none;
+}
+.attract-scene {
+  transform-origin: 50% 66%;
+  transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.attract-inner .sc-root {
+  border-radius: 0;
+}
+/* Stars twinkle, Earth drifts, the Sun breathes (sc-breathe already loops), plants sway. Opacity and transform only. */
+.attract-scene .sc-stars circle:nth-child(3n) {
+  animation: at-twinkle 4.2s ease-in-out infinite;
+}
+.attract-scene .sc-stars circle:nth-child(6n) {
+  animation-delay: -2.1s;
+}
+.attract-scene .sc-earth {
+  animation: at-drift 14s ease-in-out infinite alternate;
+}
+.attract-scene .sc-plants-ok {
+  transform-origin: 50% 100%;
+  animation: at-sway 3.6s ease-in-out infinite alternate;
+}
+@keyframes at-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes at-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-14px, 4px);
+  }
+}
+@keyframes at-sway {
+  from {
+    rotate: -3deg;
+  }
+  to {
+    rotate: 3deg;
+  }
+}
+.attract.leaving .attract-scene {
+  transform: scale(1.9);
+}
+.attract.leaving .starthead,
+.attract.leaving .ahead,
+.attract.leaving .playrow,
+.attract.leaving .fineprint {
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+.peek {
+  position: absolute;
+  left: 47%;
+  top: 56%;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  animation: at-peek 2.6s ease-in-out both;
+}
+.peek img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--cream, #fff8e8);
+  border: 2px solid #fff8e8;
+}
+.peek-hand {
+  position: absolute;
+  right: -14px;
+  top: -6px;
+  color: #fff8e8;
+  transform-origin: 70% 90%;
+  animation: at-wave 0.5s ease-in-out 0.5s 4 alternate;
+}
+@keyframes at-peek {
+  0% {
+    transform: translateY(14px) scale(0.6);
+    opacity: 0;
+  }
+  18%,
+  82% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(14px) scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes at-wave {
+  from {
+    transform: rotate(-18deg);
+  }
+  to {
+    transform: rotate(22deg);
+  }
+}
+.ahead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 4px;
+}
+.ahead-days {
+  display: flex;
+  gap: 4px;
+}
+.ahead-days i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sun);
+  opacity: 0.85;
+}
+.ahead-crew {
+  display: flex;
+  gap: 4px;
+}
+.ahead-crew img {
+  border-radius: 50%;
+  background: #fff8e8;
+}
+.playrow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.orbi-idle img {
+  display: block;
+  animation: at-bounce 1.8s ease-in-out infinite;
+}
+@keyframes at-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.primary.big.pulse {
+  animation: at-pulse 2.4s ease-in-out infinite;
+}
+@keyframes at-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+.iconbtn.journalbtn {
+  width: 64px;
+  min-height: 64px;
+  border-radius: 18px;
+  background: #fff8e8;
+  color: #0f1a33;
+  border-color: var(--sun);
+}
+.paw.pawplay {
+  left: 22%;
+  top: -22px;
+}
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(8, 14, 30, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 60px 12px 0;
+}
+.sheet {
+  position: relative;
+  background: #17264a;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  width: min(100%, 300px);
+}
+.sheet-close {
+  position: absolute;
+  top: -22px;
+  right: 6px;
+  background: #17264a;
+}
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attract *,
+  .attract *::before,
+  .attract *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+html.calm .attract *,
+html.calm .attract *::before,
+html.calm .attract *::after {
+  animation: none !important;
+  transition: none !important;
+}
+/* Calm and reduced motion keep one slow glow on the Sun only. */
+html.calm .attract-scene .sc-breathe,
+.attract-scene[data-still='yes'] .sc-breathe {
+  animation: sc-breathe 6s ease-in-out infinite !important;
+}
+/* On Start the loop itself is the picture for every sound, so the sound-twin chip would only sit on the title. */
+body:has(.attract) .twin {
+  display: none;
+}
+.attract {
+  gap: 14px;
+  padding-top: 10px;
+}
+.attract .fineprint {
+  margin-top: auto;
+}
+.attract .playrow {
+  margin-top: 4px;
+}
+.paw.pawplay {
+  margin: 0;
+}
+
+/* Start: fill the phone. The scene stays its own shape; extra night sky grows above it. */
+.attract-frame {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #1b3772;
+}
+.attract-sky {
+  flex: 1 1 0;
+  min-height: 0;
+  background-image: radial-gradient(circle at 12% 30%, #fff8e8 1.2px, transparent 2px), radial-gradient(circle at 34% 70%, #fff8e8 1px, transparent 2px), radial-gradient(circle at 58% 24%, #fff8e8 1.4px, transparent 2px),
+    radial-gradient(circle at 78% 62%, #fff8e8 1px, transparent 2px), radial-gradient(circle at 90% 18%, #fff8e8 1.2px, transparent 2px), radial-gradient(circle at 22% 86%, #fff8e8 1px, transparent 2px), linear-gradient(#070d1f, #1b3772);
+}
+.attract-scene {
+  flex: none;
+}
+.attract .fineprint {
+  margin-top: 0;
+}
+.paw.pawplay {
+  margin: -24px 0 0 -24px;
+}
+.primary.big.pulse {
+  animation: at-glow 2.4s ease-in-out infinite;
+}
+@keyframes at-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 169, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(240, 169, 0, 0.35);
+  }
+}
+.peek {
+  left: calc(50% - 15px);
+  top: calc(61.6% - 15px);
+  width: 30px;
+  height: 30px;
+}
+.peek img {
+  width: 30px;
+  height: 30px;
+}
+.sheet-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.sheet-close {
+  position: static;
+  top: auto;
+  right: auto;
+  min-height: 44px;
+  background: none;
+}
+
+/* While the camera moves into the base, the loop's own animations rest, so the zoom is the only thing moving. */
+.attract.leaving .attract-scene {
+  will-change: transform;
+}

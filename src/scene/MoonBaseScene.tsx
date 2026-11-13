@@ -51,6 +51,12 @@ export interface MoonBaseSceneProps {
   unsafe?: CrewId[]
   /** Calm mode: instant state changes, no loops, whatever the OS says. */
   calm?: boolean
+  /** Hide ORBI (the Start screen shows its own, next to Play). */
+  hideOrbi?: boolean
+  /** Which crew to draw (default all four). The Start screen draws none and peeks one out of a window itself. */
+  crew?: CrewId[]
+  /** Crew keep standing when rays fall (no roof glyphs): for the Start screen's show, not for the game. */
+  noShelter?: boolean
   /** Fewer particles. Default: detected. */
   lowEnd?: boolean
   /** Bubbles and other HTML laid over the picture (CrewBubble, OrbiBubble). */
@@ -64,7 +70,7 @@ const PLANNED: Record<number, WalkKind | undefined> = { 1: 'short', 2: 'long' }
  * The living Moon base, one 360 x 440 SVG (scales to the screen) with HTML bubbles laid over it.
  * Props in, picture out: nothing here reads the game or knows how a flare ends. There are no words in the picture.
  */
-export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', stepperY, onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, children, ref }: MoonBaseSceneProps) {
+export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', stepperY, onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, hideOrbi = false, crew = ['safia', 'kofi', 'leo', 'mei'], noShelter = false, children, ref }: MoonBaseSceneProps) {
   const root = useRef<HTMLDivElement>(null)
   const latest = useRef(model)
   latest.current = model
@@ -95,7 +101,7 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
   const warn = model.storm !== 'none' || model.flare !== null
   const total = model.blocks.air + model.blocks.shield + model.blocks.plants + model.blocks.radio + model.blocks.walk
   const left = blocksLeft ?? Math.max(0, 6 - total)
-  const sheltered = model.storm === 'now' || reveal?.kind === 'rays'
+  const sheltered = !noShelter && (model.storm === 'now' || reveal?.kind === 'rays')
 
   // The cloud: creeping while a watch runs; at the reveal it arrives (rays) or slides past (all-clear).
   const cloudFlare: FlareView | null = model.flare
@@ -153,8 +159,8 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
 
         <g className="sc-ground-layer" style={{ pointerEvents: 'none' }}>
           {planned && !walk && <WalkTrail kind={planned} />}
-          <OrbiToken alert={model.storm !== 'none' || model.flare !== null} />
-          {(['safia', 'kofi', 'leo', 'mei'] as const).map((id) => (
+          {!hideOrbi && <OrbiToken alert={model.storm !== 'none' || model.flare !== null} />}
+          {crew.map((id) => (
             <CrewToken key={id} id={id} mood={model.moods[id]} sheltered={sheltered} unsafe={unsafe.includes(id)} />
           ))}
           {walk && <Walker key={walk.key} kind={walk.kind} mode={walk.mode} playKey={walk.key} onDone={walk.onDone} calm={calm} />}

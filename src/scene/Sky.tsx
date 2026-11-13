@@ -88,6 +88,17 @@ export function FlareBurst({ size, cloud, side, showSide }: { size: FlareSize; c
   )
 }
 
+/** How far the Sun picture reaches from its centre: the halo, and a flare's burst with its rings (and the fizzle ring when there is no gas cloud). */
+export function sunReach(flare: { size: FlareSize; cloud: boolean } | null, side: Side, showSide: boolean): { left: number; right: number; up: number; down: number } {
+  const halo = SUN_R + 14
+  if (!flare) return { left: halo, right: halo, up: halo, down: halo }
+  const spot = burstSpot(side, showSide)
+  const r = BURST_R[flare.size]
+  const rings = r + 6 + PULSES[flare.size] * 8 // the outer fizzle ring; the pulse rings are smaller
+  const reach = flare.cloud ? r + 6 + (PULSES[flare.size] - 1) * 8 : rings
+  return { left: Math.max(halo, reach - spot.x), right: Math.max(halo, reach + spot.x), up: Math.max(halo, reach - spot.y), down: Math.max(halo, reach + spot.y) }
+}
+
 export interface SunProps {
   x: number
   y: number

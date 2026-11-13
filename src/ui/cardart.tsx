@@ -10,6 +10,7 @@ import {
   Flame,
   Footprints,
   Hammer,
+  Apple,
   Hand,
   House,
   Lightbulb,
@@ -61,7 +62,7 @@ export function Effects({ o }: { o: Option }) {
   if (o.science) chips.push({ Icon: Sparkles, up: o.science > 0, color: 'var(--sun)' })
   if (o.power) chips.push({ Icon: Zap, up: o.power > 0, color: 'var(--power)' })
   if (o.air) chips.push({ Icon: Wind, up: o.air > 0, color: 'var(--air)' })
-  if (o.food) chips.push({ Icon: Sprout, up: o.food > 0, color: 'var(--plants)' })
+  if (o.food) chips.push({ Icon: Apple, up: o.food > 0, color: 'var(--plants)' })
   if (o.radiation) chips.push({ Icon: Radiation, up: o.radiation > 0, color: 'var(--radiation)' })
   if (o.slowWalk) chips.push({ Icon: Footprints, up: false, color: 'var(--muted)' })
   if (o.slowPlants) chips.push({ Icon: Sprout, up: false, color: 'var(--muted)' })

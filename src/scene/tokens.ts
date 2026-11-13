@@ -38,7 +38,8 @@ export const DUR = { tap: 120, ui: 240, scene: 480, hero: 900, fly: 320, max: 24
 
 /** The Sun is a disc on an arc across the sky. */
 export const SUN_R = 20
-const ARC = { cx: 180, cy: 215, rx: 150, ry: 150 }
+// The arc is narrow enough that the whole Sun, its halo and the biggest flare burst with its rings stay inside the 360 wide board on every day.
+const ARC = { cx: 180, cy: 215, rx: 105, ry: 135 }
 
 /** Sun position for a day: it climbs from the left horizon and sets on the right over the mission. */
 export function sunPos(day: number, totalDays: number): { x: number; y: number } {

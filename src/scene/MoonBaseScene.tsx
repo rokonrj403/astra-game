@@ -166,7 +166,8 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
         {stepTargets.map((t) => (
           <Stepper key={t} target={t} y={stepperY} count={blocks[t]} canAdd={left > 0 && (t !== 'radio' || model.earth)} onAdd={onAdd} onRemove={onRemove} />
         ))}
-        <ClueTags tags={clueTags} open={tagsOpen} x={sun.x} y={sun.y + 48} />
+        {/* The tags go above a low Sun and below a high one, so they stay off the crew faces (the crew stand at about y 200 to 240). */}
+        <ClueTags tags={clueTags} open={tagsOpen} x={sun.x} y={sun.y >= 140 ? sun.y - 40 - 24 * clueTags.length : sun.y + 48} />
         <rect className="sc-dim sc-fade" width={W} height={H} fill="#0f1a33" opacity={dim ? 0.55 : 0} style={{ pointerEvents: 'none' }} />
       </svg>
       <div className="sc-overlay">{children}</div>

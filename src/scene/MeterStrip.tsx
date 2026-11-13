@@ -1,4 +1,4 @@
-import { AlertTriangle, Radiation, Sparkles, Sprout, Wind, Zap, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Apple, Radiation, Sparkles, Wind, Zap, type LucideIcon } from 'lucide-react'
 import { HIGH_RADIATION, LOW } from '../ui/look'
 
 export interface MeterValues {
@@ -12,7 +12,7 @@ const ROWS: { key: keyof MeterValues; Icon: LucideIcon; color: string; label: st
   { key: 'air', Icon: Wind, color: 'var(--air, #56B4E9)', label: 'Air' },
   { key: 'power', Icon: Zap, color: 'var(--power, #F0E442)', label: 'Power' },
   { key: 'radiation', Icon: Radiation, color: 'var(--radiation, #D55E00)', label: 'Radiation' },
-  { key: 'food', Icon: Sprout, color: 'var(--plants, #009E73)', label: 'Food' },
+  { key: 'food', Icon: Apple, color: 'var(--plants, #009E73)', label: 'Food' },
 ]
 
 /**

@@ -1,3 +1,4 @@
+import { SHIELD_LETS_THROUGH } from '../engine/constants'
 import { activeWarning } from '../engine/game'
 import type { GameState } from '../engine/types'
 
@@ -63,4 +64,38 @@ export function sceneLabel(s: SceneState): string {
     s.plantsHappy ? 'The plants look happy.' : 'The plants look sad.',
   ]
   return `The Moon base. ${parts.filter(Boolean).join(' ')}`
+}
+
+/** The share of space rays the Shield lets in, from the engine's own table (1 = shield off, nothing blocked). */
+export function letsThrough(shieldBlocks: number): number {
+  return SHIELD_LETS_THROUGH[Math.max(0, Math.min(6, Math.round(shieldBlocks)))] ?? 1
+}
+
+/** Height of the shield dome's edge above the ground at a given x (the dome is 240 wide and 100 high, centred at x=190). */
+export function domeY(x: number): number {
+  const k = Math.max(0, 1 - ((x - 190) / 120) ** 2)
+  return 152 - 100 * Math.sqrt(k)
+}
+
+export interface Particle {
+  x: number
+  y0: number
+  y1: number
+  delay: number
+  /** true: this storm particle gets past the shield and lands on the ground. */
+  passes: boolean
+}
+
+/**
+ * Storm particles for the base picture. Out of 10, round(10 x lets-through) get past the shield; the rest stop at the dome.
+ * With the Shield off all 10 land on the base; with 6 blocks about 1 in 20 would, so none are drawn.
+ */
+export function particlePlan(shieldBlocks: number, count = 10): Particle[] {
+  const through = Math.round(count * letsThrough(shieldBlocks))
+  return Array.from({ length: count }, (_, i) => {
+    const x = 84 + ((i * 53) % 230)
+    // spread the "passes" evenly instead of bunching them at the start
+    const passes = Math.floor(((i + 1) * through) / count) > Math.floor((i * through) / count)
+    return { x, y0: 8, y1: passes ? 148 : domeY(x) - 2, delay: (i % 5) * 0.28, passes }
+  })
 }

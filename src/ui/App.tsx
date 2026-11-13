@@ -7,6 +7,7 @@ import { browserStore, readJSON, writeJSON } from '../live/store'
 import { Base } from './base'
 import { DataPage } from './DataPage'
 import { Settings, Teachers } from './pages'
+import { setSoundEnabled, sfx } from './sfx'
 import { ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
@@ -31,6 +32,10 @@ export function App() {
   const [sun, setSun] = useState<SunView | null>(null)
   const [met, setMet] = useState<string[]>(() => readJSON<string[]>(browserStore(), CARDS_KEY) ?? [])
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs)
+
+  useEffect(() => {
+    setSoundEnabled(prefs.sound)
+  }, [prefs.sound])
 
   useEffect(() => {
     let alive = true
@@ -135,12 +140,15 @@ export function App() {
 
   return (
     <PrefsContext.Provider value={prefs}>
-      {keepBase && game && (
-        <div hidden={screen !== 'play'}>
-          <Base key={game.day} game={game} sun={sun} onShare={share} onData={() => open('data')} onSun={() => open('sun')} />
-        </div>
-      )}
-      {other}
+      {/* One soft tap sound for every button (mute it in Settings). */}
+      <div onClickCapture={(e) => (e.target as HTMLElement).closest('button') && sfx.tap()}>
+        {keepBase && game && (
+          <div hidden={screen !== 'play'}>
+            <Base key={game.day} game={game} sun={sun} onShare={share} onData={() => open('data')} onSun={() => open('sun')} />
+          </div>
+        )}
+        {other}
+      </div>
     </PrefsContext.Provider>
   )
 }

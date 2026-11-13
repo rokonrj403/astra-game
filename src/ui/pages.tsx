@@ -10,6 +10,21 @@ export function Settings({ prefs, onChange, onBack }: { prefs: Prefs; onChange: 
         Back
       </button>
       <h2>Settings</h2>
+      <section className="card stack" aria-label="Sound">
+        <div className="row between">
+          <h3 id="snd-label">Sound</h3>
+          <button
+            role="switch"
+            aria-checked={prefs.sound}
+            aria-labelledby="snd-label"
+            className={`switch${prefs.sound ? ' on' : ''}`}
+            onClick={() => onChange({ ...prefs, sound: !prefs.sound })}
+          >
+            {prefs.sound ? 'On' : 'Off'}
+          </button>
+        </div>
+        <p>Soft clicks, a chime for storm news and a rumble when a storm hits. They are made on your device. Nothing is downloaded.</p>
+      </section>
       <section className="card stack" aria-label="Read aloud">
         <div className="row between">
           <h3 id="ra-label">Read aloud</h3>

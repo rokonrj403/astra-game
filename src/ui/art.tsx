@@ -1,15 +1,21 @@
-import { CREW, sceneLabel, type CrewId, type Mood, type SceneState } from './look'
+import { CREW, letsThrough, particlePlan, sceneLabel, type CrewId, type Mood, type SceneState } from './look'
 
 const art = (path: string) => `${import.meta.env.BASE_URL}art/${path}`
 
 /** A crew face on its cream plate (the plate and the crew-colour ring are part of the picture). */
 export function CrewFace({ id, mood, size = 56 }: { id: CrewId; mood: Mood; size?: number }) {
   const who = CREW.find((c) => c.id === id)
-  return <img className="face" src={art(`crew/${id}-${mood}.webp`)} width={size} height={size} alt={`${who?.name ?? id}, ${mood}`} />
+  return <img className="face react" src={art(`crew/${id}-${mood}.webp`)} width={size} height={size} alt={`${who?.name ?? id}, ${mood}`} />
 }
 
+/** ORBI looks at you, and now and then blinks (a second picture fades in for a moment). */
 export function OrbiFace({ look = 'open', size = 48 }: { look?: 'open' | 'curious' | 'blink'; size?: number }) {
-  return <img className="face" src={art(`orbi/orbi-${look}.webp`)} width={size} height={size} alt="ORBI, the robot dog" />
+  return (
+    <span className="orbi-face" style={{ width: size, height: size }}>
+      <img className="face" src={art(`orbi/orbi-${look}.webp`)} width={size} height={size} alt="ORBI, the robot dog" />
+      <img className="face blink-eyes" src={art('orbi/orbi-blink.webp')} width={size} height={size} alt="" aria-hidden="true" />
+    </span>
+  )
 }
 
 export function CrewStrip({ moods }: { moods: Record<CrewId, Mood> }) {
@@ -17,7 +23,7 @@ export function CrewStrip({ moods }: { moods: Record<CrewId, Mood> }) {
     <ul className="crew" aria-label="The crew">
       {CREW.map((c) => (
         <li key={c.id}>
-          <CrewFace id={c.id} mood={moods[c.id]} />
+          <CrewFace key={moods[c.id]} id={c.id} mood={moods[c.id]} />
           <span>{c.name}</span>
         </li>
       ))}
@@ -32,7 +38,8 @@ export function CrewStrip({ moods }: { moods: Record<CrewId, Mood> }) {
 export function BaseScene({ s }: { s: SceneState }) {
   const warn = s.storm !== 'none'
   const sun = warn ? '#D55E00' : '#E69F00'
-  const glow = s.shield === 0 ? 0 : 0.08 + s.shield * 0.03 + (s.storm === 'now' ? 0.2 : 0)
+  // The dome glows as much as the Shield really blocks (from the engine's table), a little more when the storm is here.
+  const glow = s.shield === 0 ? 0 : 0.06 + (1 - letsThrough(s.shield)) * 0.34 + (s.storm === 'now' ? 0.1 : 0)
   const window = s.powerLow ? '#5b6b8a' : '#F0E442'
   return (
     <svg className="scene" viewBox="0 0 360 200" role="img" aria-label={sceneLabel(s)}>
@@ -60,7 +67,7 @@ export function BaseScene({ s }: { s: SceneState }) {
 
         {s.sunny ? (
           <g id="sun" className={warn ? 'pulse' : undefined}>
-            <circle cx="56" cy="54" r="32" fill={sun} opacity="0.22" />
+            <circle className="breathe" cx="56" cy="54" r="32" fill={sun} opacity="0.22" />
             <circle cx="56" cy="54" r="17" fill={sun} />
             {warn &&
               [0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
@@ -95,6 +102,7 @@ export function BaseScene({ s }: { s: SceneState }) {
           <path d="M116 135 L144 130 L150 144 L122 149Z" fill={s.sunny ? '#56B4E9' : '#26436f'} />
           <line x1="100" y1="146" x2="100" y2="158" />
           <line x1="133" y1="142" x2="133" y2="156" />
+          {s.sunny && <path className="glint" d="M84 141 L89 140 L92 152 L87 153Z" fill="#F2EFE8" stroke="none" />}
         </g>
 
         <g id="habitat">
@@ -131,9 +139,24 @@ export function BaseScene({ s }: { s: SceneState }) {
           <line x1="318" y1="152" x2="318" y2="130" stroke="#34476e" strokeWidth="3" />
           <g transform={`rotate(${s.earth ? -35 : 20} 318 130)`}>
             <path d="M306 126 Q318 144 330 126" fill="none" stroke="#CC79A7" strokeWidth="4" strokeLinecap="round" />
-            <circle cx="318" cy="123" r="2.5" fill="#CC79A7" />
+            <circle className="blink" cx="318" cy="123" r="2.5" fill="#CC79A7" />
           </g>
         </g>
+
+        {s.storm === 'now' && (
+          <g id="storm-particles" key={s.shield} fill="#E69F00">
+            {particlePlan(s.shield).map((p, i) => (
+              <circle
+                key={i}
+                className={`ptl ${p.passes ? 'through' : 'stop'}`}
+                cx={p.x}
+                cy={p.y0}
+                r="3"
+                style={{ ['--dy' as string]: `${p.y1 - p.y0}px`, animationDelay: `${p.delay}s` }}
+              />
+            ))}
+          </g>
+        )}
 
         <g id="shield-dome">
           <path

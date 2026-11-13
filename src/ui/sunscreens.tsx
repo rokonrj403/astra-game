@@ -125,7 +125,7 @@ export function StormCards({ met, onBack }: { met: string[]; onBack: () => void 
       <div className="choices">
         {storms.map((s) =>
           met.includes(s.id) ? (
-            <article key={s.id} className="stormcard" aria-label={s.title}>
+            <article key={s.id} className="stormcard flip" aria-label={s.title}>
               <div className="chips">
                 <StatusBadge label="PAST" />
               </div>

@@ -12,6 +12,8 @@ export default defineConfig({
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
+    // Steady screenshots, and a check that the game still works with every animation off.
+    reducedMotion: 'reduce',
   },
   webServer: {
     command: 'npm run build && npx vite preview --port 4173 --host 127.0.0.1',

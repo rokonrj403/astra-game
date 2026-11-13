@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, Database, Globe, Minus, Moon, Plus, Radiation, Radio, Shield, Sprout, Sun, Wind, Zap, type LucideIcon } from 'lucide-react'
 import { BLOCKS, POWER_PER_BLOCK } from '../engine/constants'
 import { activeWarning, currentCard, radioAvailable, step } from '../engine/game'
@@ -6,7 +6,8 @@ import { makeRng } from '../engine/rng'
 import type { Choice, GameState, Jobs, Loss, Meters } from '../engine/types'
 import type { SunView } from '../live/sun'
 import { BaseScene, CrewStrip, OrbiFace } from './art'
-import { crewMoods, sceneState } from './look'
+import { crewMoods, HIGH_RADIATION, LOW, sceneState } from './look'
+import { sfx } from './sfx'
 import { Speak } from './speech'
 import { SunChip } from './sunscreens'
 
@@ -27,11 +28,22 @@ function Bars({ game, forecast }: { game: GameState; forecast: Meters | null }) 
         const delta = forecast ? Math.round(forecast[key] - v) : 0
         const bad = key === 'radiation' ? delta > 0 : delta < 0
         const words = delta === 0 ? 'Forecast stays the same' : `Forecast ${delta > 0 ? 'up' : 'down'} ${Math.abs(delta)}`
+        // A bar in the danger zone glows and pulses once; a screen reader hears "low" or "high" too, so it is not colour alone.
+        const danger = key === 'radiation' ? v >= HIGH_RADIATION : v < LOW[key]
         return (
-          <div key={key} className="meter">
+          <div key={key} className={`meter${danger ? ' danger' : ''}`}>
             <Icon size={22} color={color} className="icon" aria-hidden="true" />
             <span className="label">{label}</span>
-            <div className="segments" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)} style={{ ['--c' as string]: color }}>
+            <div
+              className="segments"
+              role="meter"
+              aria-label={label}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(v)}
+              aria-valuetext={danger ? `${Math.round(v)}, ${key === 'radiation' ? 'high' : 'low'}` : undefined}
+              style={{ ['--c' as string]: color }}
+            >
               {Array.from({ length: 10 }, (_, i) => (
                 <i key={i} className={i < on ? 'on' : undefined} />
               ))}
@@ -88,6 +100,10 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
   const rows = JOB_ROWS.filter((r) => r.key !== 'plants' || game.hasFood)
   const forecast = forecastFor(game, jobs)
   const tip = `You have ${BLOCKS} blocks each day. Tap + to give them to a job. Check the arrows first.`
+  const warnKey = warn ? `${warn.stormIndex}:${warn.daysUntil}` : ''
+  useEffect(() => {
+    if (warnKey) sfx.chime()
+  }, [warnKey])
 
   const bump = (k: keyof Jobs, by: number) => setJobs((j) => ({ ...j, [k]: Math.max(0, j[k] + by) }))
 
@@ -165,7 +181,9 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
                   <button aria-label={`Fewer blocks for ${label}`} disabled={jobs[key] === 0} onClick={() => bump(key, -1)}>
                     <Minus size={22} aria-hidden="true" />
                   </button>
-                  <output aria-label={`${label} blocks`}>{jobs[key]}</output>
+                  <output key={jobs[key]} className="pop" aria-label={`${label} blocks`}>
+                    {jobs[key]}
+                  </output>
                   <button aria-label={`More blocks for ${label}`} disabled={blocked || left === 0} onClick={() => bump(key, 1)}>
                     <Plus size={22} aria-hidden="true" />
                   </button>

@@ -8,6 +8,8 @@ import { cards } from '../engine/cards'
 import type { BadgeId, GameState, Loss, Mode } from '../engine/types'
 import { OrbiFace } from './art'
 import { METERS } from './base'
+import { Celebrate, CountUp } from './motion'
+import { sfx } from './sfx'
 import { Speak } from './speech'
 
 export const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
@@ -199,6 +201,11 @@ export function changeLine(label: string, a: number, b: number): string {
 
 export function Report({ game, onNext }: { game: GameState; onNext: () => void }) {
   const r = game.history[game.history.length - 1]
+  const stormToday = r?.storm != null
+  const reportDay = r?.day
+  useEffect(() => {
+    if (stormToday) sfx.rumble()
+  }, [stormToday, reportDay])
   if (!r) return null
   const card = cards.find((c) => c.id === r.cardId)
   const over = game.status !== 'playing'
@@ -222,7 +229,11 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
         {METERS.filter((m) => m.key !== 'food' || game.hasFood).map(({ key, Icon, color }, i) => (
           <li key={key} className="change">
             <Icon size={24} color={color} aria-hidden="true" />
-            <span>{lines[i]}</span>
+            <span className="grow">{lines[i]}</span>
+            {/* The number counts up for the eye; the sentence beside it is always right for a screen reader. */}
+            <b className="now" aria-hidden="true">
+              <CountUp from={Math.round(r.before[key])} to={Math.round(r.after[key])} />
+            </b>
           </li>
         ))}
       </ul>
@@ -295,8 +306,12 @@ const BADGE: Record<BadgeId, string> = {
 export function Complete({ game, onAgain, onData }: { game: GameState; onAgain: () => void; onData: () => void }) {
   const won = game.status === 'won'
   const site = sites.find((s) => s.id === game.siteId)
+  useEffect(() => {
+    if (won) sfx.success()
+  }, [won])
   return (
     <main className="app">
+      {won && <Celebrate />}
       <h2>{won ? 'Mission complete!' : 'The rescue ship is here'}</h2>
       <p>
         {won
@@ -321,8 +336,8 @@ export function Complete({ game, onAgain, onData }: { game: GameState; onAgain: 
         </div>
       </div>
       <div className="badges">
-        {badges(game).map((b) => (
-          <span className="chip" key={b}>
+        {badges(game).map((b, i) => (
+          <span className="chip pop" key={b} style={{ animationDelay: `${0.25 + i * 0.15}s` }}>
             <Check size={16} aria-hidden="true" />
             {BADGE[b]}
           </span>

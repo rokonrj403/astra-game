@@ -631,11 +631,218 @@ summary {
   gap: 6px;
 }
 
+/* Game feel: every motion is short, gentle (nothing flashes) and switched off by "reduce motion" below */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.pop {
+  animation: pop 0.35s ease-out both;
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.meter.danger .segments {
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--c), 0 0 10px var(--c);
+  animation: glow 1.4s ease-in-out 3;
+}
+@keyframes glow {
+  50% {
+    box-shadow: 0 0 0 2px var(--c), 0 0 18px var(--c);
+  }
+}
+.alert {
+  animation: slidein 0.4s ease-out;
+}
+@keyframes slidein {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+.stormcard.flip {
+  animation: flip 0.7s ease-out;
+}
+@keyframes flip {
+  from {
+    transform: perspective(600px) rotateY(90deg);
+    opacity: 0;
+  }
+}
+.breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: breathe 4s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.36;
+    transform: scale(1.08);
+  }
+}
+.glint {
+  opacity: 0;
+  animation: glint 6s linear infinite;
+}
+@keyframes glint {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.85;
+  }
+  26% {
+    transform: translateX(58px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(58px);
+    opacity: 0;
+  }
+}
+.blink {
+  animation: dish 3.2s ease-in-out infinite;
+}
+@keyframes dish {
+  60% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.25;
+  }
+}
+.ptl {
+  transform-box: fill-box;
+  animation: ptl 1.4s linear infinite;
+}
+.ptl.stop {
+  animation-name: ptl-stop;
+}
+@keyframes ptl {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--dy));
+    opacity: 1;
+  }
+}
+@keyframes ptl-stop {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(var(--dy));
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--dy));
+    opacity: 0;
+  }
+}
+.orbi-face {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+.orbi-face .blink-eyes {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: eyes 5s infinite;
+}
+@keyframes eyes {
+  0%,
+  94%,
+  100% {
+    opacity: 0;
+  }
+  96%,
+  98% {
+    opacity: 1;
+  }
+}
+.face.react {
+  animation: react 0.5s ease-out;
+}
+@keyframes react {
+  40% {
+    transform: scale(1.12);
+  }
+}
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.confetti i {
+  position: absolute;
+  top: -16px;
+  left: var(--x);
+  width: 10px;
+  height: 14px;
+  background: var(--c);
+  border-radius: 2px;
+  animation: fall 2.6s ease-in var(--d) 1 forwards;
+}
+@keyframes fall {
+  to {
+    transform: translateY(105vh) rotate(540deg);
+  }
+}
+.grow {
+  flex: 1;
+}
+.now {
+  min-width: 3ch;
+  text-align: right;
+  font-size: 1.2rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .wait i {
+  .wait i,
+  .pulse,
+  .pop,
+  .meter.danger .segments,
+  .alert,
+  .stormcard.flip,
+  .breathe,
+  .glint,
+  .blink,
+  .orbi-face .blink-eyes,
+  .face.react {
     animation: none;
   }
-  .pulse {
+  .ptl {
     animation: none;
+    opacity: 1;
+    transform: translateY(var(--dy));
+  }
+  .ptl.stop {
+    opacity: 0.35;
+  }
+  .confetti {
+    display: none;
+  }
+  button:active:not(:disabled) {
+    transform: none;
   }
 }

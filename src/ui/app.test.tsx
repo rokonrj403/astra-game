@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { newGame } from '../engine/game'
 import { App } from './App'
+import { Base } from './base'
 
 // No test touches the real network: NASA is "offline", so Today's Sun is SAVED.
 beforeEach(() => {
@@ -275,6 +277,26 @@ describe('screens', () => {
     expect(text).toContain('not made or endorsed by NASA')
     tap('Back')
     expect(screen.getByRole('heading', { name: 'ASTRA' })).toBeTruthy()
+  })
+
+  it('the Sound switch is On by default, can be turned Off and is remembered', () => {
+    render(<App />)
+    tap('Settings')
+    const sw = screen.getByRole('switch', { name: 'Sound' })
+    expect(sw.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(sw)
+    expect(sw.getAttribute('aria-checked')).toBe('false')
+    expect(localStorage.getItem('astra-prefs-v1')).toContain('"sound":false')
+  })
+
+  it('a bar in the danger zone glows and a screen reader hears "low" or "high", not just a colour', () => {
+    const g = { ...newGame({ mode: 'commander', siteId: 'region-3', seed: 2 }), storms: [], warned: [], air: 20, radiation: 70 }
+    render(<Base game={g} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
+    expect(screen.getByRole('meter', { name: 'Air' }).getAttribute('aria-valuetext')).toBe('20, low')
+    expect(screen.getByRole('meter', { name: 'Radiation' }).getAttribute('aria-valuetext')).toBe('70, high')
+    expect(screen.getByRole('meter', { name: 'Power' }).getAttribute('aria-valuetext')).toBeNull()
+    expect(screen.getByRole('meter', { name: 'Air' }).closest('.meter')?.className).toContain('danger')
+    expect(screen.getByRole('meter', { name: 'Power' }).closest('.meter')?.className).not.toContain('danger')
   })
 
   it('uses the kid word rules: "day" not "sol", "tap" not "click"', () => {

@@ -125,6 +125,10 @@ test('the storm, radio call, why-it-happened, end and card screens fit', async (
       if (await page.getByRole('alert').isVisible()) {
         if (!seen.has('alert')) await audit(page, '09-base-storm-alert')
         seen.add('alert')
+        if (!seen.has('now') && (await page.getByRole('alert').textContent())?.includes('Storm today')) {
+          seen.add('now')
+          await audit(page, '09b-base-storm-now')
+        }
       }
       await page.getByRole('button', { name: 'Next day' }).click()
     } else {

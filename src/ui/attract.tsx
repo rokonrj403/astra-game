@@ -162,14 +162,14 @@ export function GearSheet({
         <SlidersHorizontal size={22} aria-hidden="true" />
       </button>
       {open && (
-        <div className="sheet-scrim" onClick={() => setOpen(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-label="More" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-top">
-              <button type="button" className="iconbtn sheet-close" onClick={() => setOpen(false)} aria-label="Close">
+        <div className="gear-scrim" onClick={() => setOpen(false)}>
+          <div className="gear-sheet" role="dialog" aria-modal="true" aria-label="More" onClick={(e) => e.stopPropagation()}>
+            <div className="gear-top">
+              <button type="button" className="iconbtn gear-close" onClick={() => setOpen(false)} aria-label="Close">
                 <X size={22} aria-hidden="true" />
               </button>
             </div>
-            <div className="sheet-grid">
+            <div className="gear-grid">
               {items.map(([go, Icon, label]) => (
                 <button key={label} type="button" className="iconbtn big" onClick={go} aria-label={label} title={label}>
                   <Icon size={26} aria-hidden="true" />

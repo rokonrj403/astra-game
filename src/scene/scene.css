@@ -1,0 +1,617 @@
+/*
+ * The living Moon base scene.
+ * Rules (expert-motion.md): animate only transform and opacity, one easing family, no filters or blur,
+ * the resting style of every part is its FINAL state, so reduced motion (animation: none) shows the finished picture.
+ */
+.sc-root {
+  --sc-t: 480ms;
+  --sc-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sc-state: cubic-bezier(0.4, 0, 0.2, 1);
+  --sc-reward: cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  width: 100%;
+  aspect-ratio: 360 / 440;
+  overflow: hidden;
+  contain: paint;
+  border-radius: 16px;
+  background: #0f1a33;
+  font-family: 'Nunito', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sc-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sc-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Smooth state changes: a day moves the Sun, the cloud, the plants. */
+.sc-move {
+  transition:
+    transform var(--sc-t) var(--sc-state),
+    opacity var(--sc-t) var(--sc-state);
+}
+.sc-fade {
+  transition: opacity var(--sc-t) var(--sc-state);
+}
+.sc-fill,
+.sc-plants-ok,
+.sc-plants-sad {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* Things you can tap */
+.sc-building,
+.sc-hit,
+.sc-step {
+  cursor: pointer;
+  outline: none;
+}
+.sc-building:focus-visible .sc-zone,
+.sc-hit:focus-visible circle:last-child,
+.sc-step:focus-visible circle {
+  stroke: #fff;
+  stroke-width: 3;
+}
+.sc-building.disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.sc-hot {
+  animation: sc-hot 0.7s var(--sc-state) infinite alternate;
+}
+.sc-step.off {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Sun and flare */
+.sc-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sc-breathe 3.2s ease-in-out infinite;
+}
+.sc-burst-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sc-burst 0.7s var(--sc-reward) both;
+}
+.sc-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.9;
+  animation: sc-ring 0.9s var(--sc-enter) 3 both;
+}
+.sc-fizzle {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.75;
+  animation: sc-fizz 1.6s ease-in-out 2 both;
+}
+
+/* Gas cloud: creeps one notch a day; the long pass at the reveal is the only slow move (hard max 2.4 s) */
+.sc-lane[data-state='pass'] .sc-cloud {
+  transition:
+    transform 1.8s var(--sc-state),
+    opacity 0.7s 1.1s var(--sc-state);
+}
+.sc-lane[data-state='arrive'] .sc-cloud {
+  transition:
+    transform var(--sc-t) var(--sc-state),
+    opacity 0.9s 0.3s var(--sc-state);
+}
+
+/* Rays */
+.sc-ray-move {
+  opacity: 0.9;
+  animation: sc-fall 0.9s cubic-bezier(0.45, 0, 0.8, 0.6) both;
+}
+.sc-ray.through .sc-ray-move {
+  animation-name: sc-fall-through;
+}
+.sc-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.9;
+  animation: sc-spark 0.45s var(--sc-enter) both;
+}
+.sc-ray.through .sc-spark {
+  animation-name: sc-splat;
+}
+.sc-leak {
+  animation: sc-in 0.6s ease-out both;
+}
+.sc-seg-flash {
+  opacity: 0;
+  animation: sc-segflash 0.4s ease-out both;
+}
+.sc-crack {
+  animation: sc-in 0.3s ease-out both;
+}
+.sc-seg-fresh {
+  animation: sc-in 0.24s var(--sc-reward) both;
+}
+.sc-ping {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  opacity: 0.9;
+  animation: sc-ping 0.9s var(--sc-enter) both;
+}
+.sc-tick-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sc-pop 0.36s var(--sc-reward) 0.5s both;
+}
+
+/* Blocks landing on buildings */
+.sc-pip.on {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sc-pop 0.24s var(--sc-reward) both;
+}
+.sc-land-a,
+.sc-land-b {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.sc-land-a {
+  animation: sc-squash-a 0.26s var(--sc-reward) both;
+}
+.sc-land-b {
+  animation: sc-squash-b 0.26s var(--sc-reward) both;
+}
+.sc-wire-dot {
+  opacity: 0.9;
+  animation: sc-wire 1.2s linear infinite;
+}
+.sc-wave.on {
+  animation: sc-wave 1.6s ease-in-out infinite;
+}
+.sc-windows.low {
+  opacity: 0.45;
+  animation: sc-flicker 0.9s steps(1) both;
+}
+
+/* Walker: legs swing only while it moves */
+.sc-leg {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+.sc-walker[data-walking='yes'] .sc-leg.l {
+  animation: sc-step 0.34s ease-in-out infinite alternate;
+}
+.sc-walker[data-walking='yes'] .sc-leg.r {
+  animation: sc-step 0.34s ease-in-out infinite alternate-reverse;
+}
+
+/* Crew and ORBI */
+.sc-bob {
+  animation: sc-bob 3.2s ease-in-out infinite;
+}
+.sc-shake {
+  animation: sc-shake 0.08s linear 6 both;
+}
+.sc-orbi-blink {
+  opacity: 0;
+  animation: sc-blink 4.2s steps(1) infinite;
+}
+
+/* Bubbles (HTML over the picture) */
+.sc-bubble {
+  position: absolute;
+  pointer-events: auto;
+  background: #f2efe8;
+  color: #0f1a33;
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28);
+  transform-origin: var(--origin, 50% 100%);
+  animation: sc-bubble 0.24s var(--sc-reward) both;
+  z-index: 3;
+}
+.sc-bubble-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.sc-tail {
+  position: absolute;
+  left: calc(var(--tail, 40px) - 10px);
+  bottom: -9px;
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-top-color: #f2efe8;
+  border-bottom: 0;
+}
+.sc-choices {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.sc-pic {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 16px;
+  border: 3px solid #34476e;
+  background: #1a2a4a;
+  color: #f2efe8;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 120ms var(--sc-enter);
+}
+.sc-pic:active {
+  transform: scale(0.94);
+}
+.sc-pic[aria-pressed='true'] {
+  border-color: #eaa21a;
+  background: #2b3f6b;
+}
+.sc-pic:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Power tray */
+.sc-tray {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px;
+  background: #1a2a4a;
+  border: 2px solid #34476e;
+  border-radius: 16px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sc-slot {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  aspect-ratio: 1;
+  border: 2px dashed #34476e;
+  border-radius: 12px;
+}
+.sc-block,
+.sc-ghost i {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #eaa21a;
+  box-shadow: 0 0 14px rgba(240, 200, 60, 0.65);
+  cursor: grab;
+  touch-action: none;
+}
+.sc-block i {
+  position: absolute;
+  inset: 5px;
+  border-radius: 8px;
+  background: linear-gradient(#ffe9a8, #f2b630);
+}
+.sc-block.lifted {
+  opacity: 0.2;
+}
+.sc-block:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.sc-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  z-index: 60;
+  pointer-events: none;
+  will-change: transform;
+}
+.sc-ghost i {
+  width: 48px;
+  height: 48px;
+  min-width: 0;
+  min-height: 0;
+  background: linear-gradient(#ffe9a8, #f2b630);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Meter strip */
+.sc-meters {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+  padding: 4px 2px;
+}
+.sc-meter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-segs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+}
+.sc-segs i {
+  flex: 1;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid #34476e;
+  background: transparent;
+  transition: background-color 160ms var(--sc-state);
+}
+.sc-segs i.on {
+  background: var(--c, #eaa21a);
+  border-color: var(--c, #eaa21a);
+}
+.sc-warn {
+  color: #d55e00;
+  opacity: 0;
+  flex: none;
+}
+.sc-meter.danger .sc-warn {
+  opacity: 1;
+}
+
+/* Keyframes. The resting style is the final picture. */
+@keyframes sc-breathe {
+  50% {
+    transform: scale(1.1);
+  }
+}
+@keyframes sc-burst {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+@keyframes sc-ring {
+  from {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+@keyframes sc-fizz {
+  50% {
+    opacity: 0.2;
+    transform: scale(1.15);
+  }
+}
+@keyframes sc-hot {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sc-fall {
+  0% {
+    transform: translate(var(--sx), var(--sy));
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  94% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+}
+@keyframes sc-fall-through {
+  0% {
+    transform: translate(var(--sx), var(--sy));
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  96% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+}
+@keyframes sc-spark {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+@keyframes sc-splat {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+}
+@keyframes sc-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sc-segflash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sc-ping {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@keyframes sc-pop {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+@keyframes sc-squash-a {
+  0% {
+    transform: scaleY(0.9);
+  }
+}
+@keyframes sc-squash-b {
+  0% {
+    transform: scaleY(0.9);
+  }
+}
+@keyframes sc-wire {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-30px, -30px);
+    opacity: 0;
+  }
+}
+@keyframes sc-wave {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes sc-flicker {
+  0% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.15;
+  }
+  66% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+@keyframes sc-step {
+  from {
+    transform: rotate(-26deg);
+  }
+  to {
+    transform: rotate(26deg);
+  }
+}
+@keyframes sc-bob {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  82% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes sc-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+@keyframes sc-blink {
+  0%,
+  96% {
+    opacity: 0;
+  }
+  97%,
+  99% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sc-bubble {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion (the OS setting) or Calm mode: no travel, no loops, no flashes. The finished picture stays. */
+@media (prefers-reduced-motion: reduce) {
+  .sc-root *,
+  .sc-root *::before,
+  .sc-root *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.sc-calm *,
+.sc-calm *::before,
+.sc-calm *::after {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-pic,
+  .sc-block {
+    transition: none;
+  }
+  .sc-pic:active {
+    transform: none;
+  }
+}

@@ -1070,3 +1070,45 @@ button:active:not(:disabled) {
   border-radius: 14px;
   padding: 8px 12px;
 }
+
+/* Picture twins of sounds, and the volume slider */
+.twin {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  z-index: 20;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 3px solid var(--sun);
+  color: var(--text);
+  pointer-events: none;
+  animation: twin 1.4s ease-out both;
+}
+.twin.still {
+  animation: none;
+}
+@keyframes twin {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.slider {
+  width: 100%;
+  min-height: 48px;
+  accent-color: var(--sun);
+}

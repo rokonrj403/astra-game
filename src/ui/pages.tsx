@@ -1,9 +1,13 @@
+import { useState } from 'react'
+import { getVolume, musicEnabled, setMusicEnabled, setVolume } from '../audio'
 import { MODES } from '../engine/constants'
 import { NASA_NOTE } from './screens'
 import { canSpeak, speak, type Prefs } from './speech'
 
 export function Settings({ prefs, onChange, onBack }: { prefs: Prefs; onChange: (p: Prefs) => void; onBack: () => void }) {
   const can = canSpeak()
+  const [volume, setVol] = useState(() => Math.round(getVolume() * 100))
+  const [music, setMusic] = useState(musicEnabled)
   return (
     <main className="app">
       <button className="link" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
@@ -24,6 +28,41 @@ export function Settings({ prefs, onChange, onBack }: { prefs: Prefs; onChange: 
           </button>
         </div>
         <p>Soft clicks, a chime for storm news and a rumble when a storm hits. They are made on your device. Nothing is downloaded.</p>
+      </section>
+      <section className="card stack" aria-label="Volume">
+        <h3 id="vol-label">Volume</h3>
+        <input
+          className="slider"
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={volume}
+          aria-labelledby="vol-label"
+          onChange={(e) => {
+            const v = Number(e.target.value)
+            setVol(v)
+            setVolume(v / 100)
+          }}
+        />
+      </section>
+      <section className="card stack" aria-label="Music">
+        <div className="row between">
+          <h3 id="mus-label">Music</h3>
+          <button
+            role="switch"
+            aria-checked={music}
+            aria-labelledby="mus-label"
+            className={`switch${music ? ' on' : ''}`}
+            onClick={() => {
+              setMusicEnabled(!music)
+              setMusic(!music)
+            }}
+          >
+            {music ? 'On' : 'Off'}
+          </button>
+        </div>
+        <p>A soft sound under the game that gets tense when a flare is watched.</p>
       </section>
       <section className="card stack" aria-label="Read aloud">
         <div className="row between">

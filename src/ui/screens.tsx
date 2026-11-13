@@ -11,6 +11,8 @@ import { OrbiFace } from './art'
 import { METERS } from './base'
 import { FlareSun, GuessReveal } from './pictos'
 import { Celebrate, CountUp } from './motion'
+import { missionFailedGentle } from '../audio'
+import { revealCue } from './cues'
 import { sfx } from './sfx'
 import { Speak } from './speech'
 import { when } from './sunscreens'
@@ -264,6 +266,7 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
   const reportDay = r?.day
   useEffect(() => {
     if (stormToday) sfx.rumble()
+    if (r) revealCue(r)
   }, [stormToday, reportDay])
   if (!r) return null
   const card = cards.find((c) => c.id === r.cardId)
@@ -372,6 +375,7 @@ export function Complete({ game, onAgain, onData }: { game: GameState; onAgain: 
   const site = sites.find((s) => s.id === game.siteId)
   useEffect(() => {
     if (won) sfx.success()
+    else missionFailedGentle()
   }, [won])
   return (
     <main className="app">

@@ -8,6 +8,8 @@ import type { SunView } from '../live/sun'
 import { BaseScene, CrewFace, CrewStrip, OrbiFace } from './art'
 import { crewMoods, HIGH_RADIATION, LOW, sceneState } from './look'
 import { FlareSun, GuessIcon, GuessPicker, WatchDots } from './pictos'
+import { blockPlaced, cardFlip, dayStart, moonwalk, shieldHum, shieldHumStop } from '../audio'
+import { flareCue, lowToday, lowWarning, moodFor, setMood } from './cues'
 import { sfx } from './sfx'
 import { Speak } from './speech'
 import { SunChip } from './sunscreens'
@@ -137,11 +139,29 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
   const charge = Math.min(SHIELD_MAX, game.shield + jobs.shield)
   const tip = `You have ${BLOCKS} blocks each day. Tap + to give them to a job. Power is short, so every block counts. Read each flare, then choose. In real life most flares bring no rays. We picked tricky ones for your training.`
   const watchKey = watch ? `${watch.index}:${watch.daysSince}` : storm ? `storm:${storm.index}` : ''
+  // A new day: set the mood of the music, announce the day, turn over today's card, and warn if a bar is low.
   useEffect(() => {
-    if (watchKey) sfx.chime()
+    setMood(moodFor(game))
+    dayStart()
+    if (card) cardFlip()
+    if (lowToday(game)) lowWarning()
+  }, [game.day])
+  // A flare appears on the Sun: pulses = size, a low swell = gas cloud, the side it came from. A storm that is still here chimes.
+  useEffect(() => {
+    if (watch) flareCue(watch.record, game.mode)
+    else if (storm) sfx.chime()
   }, [watchKey])
+  // The shield hums louder as the charge grows, and stops when no shield blocks are being given.
+  useEffect(() => {
+    if (jobs.shield > 0) shieldHum(charge)
+    else shieldHumStop()
+  }, [jobs.shield])
+  useEffect(() => () => shieldHumStop(), [])
 
-  const bump = (k: keyof Jobs, by: number) => setJobs((j) => ({ ...j, [k]: Math.max(0, j[k] + by) }))
+  const bump = (k: keyof Jobs, by: number) => {
+    if (by > 0) blockPlaced()
+    setJobs((j) => ({ ...j, [k]: Math.max(0, j[k] + by) }))
+  }
   const walkOptions: { key: Walk; label: string; hint: string }[] = [
     { key: 'none', label: 'Stay home', hint: 'Safe' },
     { key: 'short', label: 'Short walk', hint: `${WALKS.short.blocks} block, +${WALKS.short.science} science` },
@@ -263,7 +283,10 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
             const need = WALKS[o.key].blocks
             const cannot = o.key !== walk && jobBlocks + need > BLOCKS
             return (
-              <button key={o.key} aria-pressed={walk === o.key} disabled={cannot} onClick={() => setWalk(o.key)}>
+              <button key={o.key} aria-pressed={walk === o.key} disabled={cannot} onClick={() => {
+                  setWalk(o.key)
+                  if (o.key !== 'none') moonwalk()
+                }}>
                 {o.label}
                 <small>{o.hint}</small>
               </button>

@@ -13,6 +13,7 @@ import { setSoundEnabled, sfx } from './sfx'
 import { ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
+import { TwinHost } from './twin'
 
 type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers' | 'journal'
 const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers', 'journal']
@@ -155,6 +156,7 @@ export function App() {
 
   return (
     <PrefsContext.Provider value={prefs}>
+      <TwinHost />
       {/* One soft tap sound for every button (mute it in Settings). */}
       <div onClickCapture={(e) => (e.target as HTMLElement).closest('button') && sfx.tap()}>
         {keepBase && game && (

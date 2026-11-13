@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { Volume2 } from 'lucide-react'
+import { duckBed } from '../audio'
 import { browserStore, readJSON, writeJSON } from '../live/store'
 
 /** Read-aloud uses the device's own voice (the Web Speech API). It never plays on its own: a kid taps the speaker. */
@@ -31,6 +32,10 @@ export function speak(text: string): void {
   const u = new SpeechSynthesisUtterance(text)
   u.lang = 'en-US'
   u.rate = 0.95
+  // The music gets quieter while a voice reads.
+  duckBed(true)
+  u.onend = () => duckBed(false)
+  u.onerror = () => duckBed(false)
   window.speechSynthesis.speak(u)
 }
 

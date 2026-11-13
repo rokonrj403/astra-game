@@ -85,8 +85,10 @@ export interface DayRecord {
   guessed: string | null
   /** Flares whose watch ended today, with what really happened (shown with the NASA record), the guess, and the science a good guess earned. */
   resolved: { flareId: string; followed: boolean; guess: Guess | null; reward: number }[]
-  /** Shield charge at the end of the day, after it leaked 1. */
+  /** Shield charge at the end of the day, after it leaked. */
   shieldAfter: number
+  /** Science this day added (walk, plants, radio, a good guess, the card). */
+  scienceGain: number
   before: Meters
   after: Meters
   flavour: number

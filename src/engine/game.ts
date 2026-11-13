@@ -402,6 +402,7 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     guessed,
     resolved,
     shieldAfter,
+    scienceGain: science - state.science,
     before,
     after,
     flavour: Math.floor(rng() * 1000),

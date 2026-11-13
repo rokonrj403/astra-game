@@ -32,6 +32,7 @@ const BUDGET: Record<string, number> = {
   '05-base-blocks': 12,
   '06-sun-saved': 12,
   '09-play-guess': 12,
+  '09b-play-clue-tags': 12,
   '09b-play-storm': 12,
   '08-report': 12,
   '10-report-storm': 12,
@@ -66,9 +67,10 @@ async function audit(page: Page, name: string) {
   await page.waitForLoadState('networkidle')
   const words = await countWords(page)
   wordLog.push({ screen: name, words })
-  if (BUDGET[name] !== undefined) expect(words, `${name} has ${words} visible words`).toBeLessThanOrEqual(BUDGET[name])
+  const key = name.replace(/-cmd$/, '') // Commander frames use the same budgets as the Cadet ones
+  if (BUDGET[key] !== undefined) expect(words, `${name} has ${words} visible words`).toBeLessThanOrEqual(BUDGET[key])
   await page.screenshot({ path: `e2e-shots/${name}.png`, fullPage: true })
-  if (FILLS.has(name)) {
+  if (FILLS.has(key)) {
     const lowest = await page.evaluate(() => {
       let max = 0
       for (const el of document.querySelectorAll<HTMLElement>('main *')) {
@@ -197,38 +199,72 @@ test('settings and for-teachers fit', async ({ page }) => {
   await audit(page, '16-teachers')
 })
 
-test('a full day, the storm, radio call, why-it-happened, end and card screens fit', async ({ page }) => {
-  await toBase(page, 'Cadet')
+
+/** The lowest visible thing on the page reaches at least 75% of the 740 px phone (no more than a quarter empty). */
+async function fills(page: Page, what: string) {
+  const lowest = await page.evaluate(() => {
+    let max = 0
+    for (const el of document.querySelectorAll<HTMLElement>('main *')) {
+      if (el.closest('[hidden]')) continue
+      const cs = getComputedStyle(el)
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue
+      const b = el.getBoundingClientRect()
+      if (b.width > 0 && b.height > 0) max = Math.max(max, b.bottom + window.scrollY)
+    }
+    return max
+  })
+  expect(lowest, `${what}: content ends at ${Math.round(lowest)} px of 740`).toBeGreaterThanOrEqual(555)
+}
+
+for (const mode of ['Cadet', 'Commander'] as const) {
+test(`a full ${mode} mission: every day, storm, radio call, why, end and card screens fit`, async ({ page }) => {
+  test.setTimeout(180_000)
+  const sfx = mode === 'Commander' ? '-cmd' : ''
+  await toBase(page, mode)
   const seen = new Set<string>()
-  for (let guard = 0; guard < 80; guard++) {
+  let days = 0
+  for (let guard = 0; guard < 600; guard++) {
     if (await page.getByRole('heading', { name: /Mission complete|Rescue ship/ }).isVisible()) break
     if (await page.getByRole('group', { name: 'Why it happened' }).isVisible()) {
-      await audit(page, '12-why')
+      await audit(page, `12-why${sfx}`)
       await page.getByRole('button', { name: 'See my mission' }).click()
     } else if (await page.locator('.daysummary').isVisible()) {
       // The summary after a day. Audit the first one that shows a real storm and the first that shows a radio call.
       // EVERY summary, storm days and reveal days included, fits the phone: no scrolling, Next on screen.
       const h = await page.evaluate(() => document.documentElement.scrollHeight)
       expect(h, 'a day summary is taller than the 740 px phone').toBeLessThanOrEqual(740)
+      await fills(page, 'day summary')
+      days++
       if ((await page.getByLabel('Real storm').count()) > 0 && !seen.has('storm')) {
         seen.add('storm')
-        await audit(page, '10-report-storm')
+        await audit(page, `10-report-storm${sfx}`)
       }
       if ((await page.getByLabel('Radio call to Earth').count()) > 0 && !seen.has('radio')) {
         seen.add('radio')
         await page.waitForTimeout(2800) // the answer arrives after the radio delay
-        await audit(page, '11-report-radio')
+        await audit(page, `11-report-radio${sfx}`)
       }
       await page.getByRole('button', { name: /Next day|See what happened|Finish the mission/ }).click()
     } else if (await page.locator('.sc-tray').isVisible()) {
-      await give(page, 'air', 'Air', 3)
-      await give(page, 'shield', 'Shield', 2)
+      // Commander needs plants and a bigger shield to last all 20 days; Cadet keeps the simple split.
+      await give(page, 'air', 'Air', mode === 'Commander' ? 2 : 3)
+      if (mode === 'Commander') await give(page, 'plants', 'Plants', 1)
+      await give(page, 'shield', 'Shield', mode === 'Commander' ? 3 : 2)
       if (await page.getByRole('group', { name: 'ORBI asks' }).isVisible()) {
-        if (!seen.has('guess')) await audit(page, '09-play-guess')
+        if (!seen.has('guess')) await audit(page, `09-play-guess${sfx}`)
         seen.add('guess')
-        // The play screen stays inside the phone on every day, whatever card or flare it has.
-        expect(await page.evaluate(() => document.documentElement.scrollHeight), 'play screen height with a flare').toBeLessThanOrEqual(740)
+        if (mode === 'Commander' && !seen.has('tags')) {
+          // The flare's clue tags (class, cloud, and the side of the Sun as a half-lit disc) stay inside the 12 words.
+          seen.add('tags')
+          await page.getByRole('button', { name: 'Sun, flare clues' }).click()
+          await audit(page, `09b-play-clue-tags${sfx}`)
+          await page.getByRole('button', { name: 'Sun, flare clues' }).click()
+        }
       }
+      // The play screen stays inside the phone on every day, whatever card, flare or tag it has, and is not left empty.
+      expect(await page.evaluate(() => document.documentElement.scrollHeight), 'play screen height').toBeLessThanOrEqual(740)
+      await fills(page, 'play screen')
+      if (mode === 'Commander') await expect(page.getByRole('meter', { name: 'Food' }), 'Commander shows the food bar every day').toBeVisible()
       const shown = await page.evaluate(() => [...document.querySelectorAll('main')].filter((m) => !m.closest('[hidden]')).map((m) => (m as HTMLElement).innerText.replace(/\s+/g, ' ')).join(' | '))
       expect(await countWords(page), `visible words on a play screen: ${shown}`).toBeLessThanOrEqual(12)
       await page.getByRole('button', { name: 'Next day' }).click()
@@ -236,9 +272,11 @@ test('a full day, the storm, radio call, why-it-happened, end and card screens f
       await page.waitForTimeout(150) // the time-lapse is playing
     }
   }
-  await audit(page, '13-end')
+  expect(days, `${mode} days played`).toBeGreaterThanOrEqual(mode === 'Commander' ? 10 : 5)
+  await audit(page, `13-end${sfx}`)
   expect(seen.has('storm'), 'a real storm should have reached the base').toBe(true)
   await page.getByRole('button', { name: 'Play again' }).click()
   await page.getByRole('button', { name: 'My storm cards' }).click()
-  await audit(page, '14-storm-cards')
+  await audit(page, `14-storm-cards${sfx}`)
 })
+}

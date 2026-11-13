@@ -204,6 +204,101 @@ write('science.json', [
   },
 ])
 
+// ---------- big flares and what followed them (the "flare watch" in the game) ----------
+// RULE (written into the data file too): a flare is "followed by space rays" when a real-instrument (not model) DONKI
+// radiation-storm record from a GOES >10 MeV detector starts within 72 hours after the flare's peak. DONKI's own links
+// between records are kept as extra evidence (`linked`). Only flares of class M5 or bigger are used.
+// The game shows a real flare and hides the outcome; the outcome is shown afterwards with its NASA record.
+const WINDOW_H = 72
+const classValue = (c) => ({ A: 1e-8, B: 1e-7, C: 1e-6, M: 1e-5, X: 1e-4 })[c[0]] * Number(c.slice(1))
+const goesRadiation = SEP.filter(
+  (e) => !isModel(e) && e.instruments?.some((i) => /GOES/.test(i.displayName) && />10 MeV/.test(i.displayName)),
+)
+  .map((e) => ({
+    id: e.sepID,
+    t: Date.parse(e.eventTime),
+    time: e.eventTime,
+    link: e.link,
+    instrument: e.instruments.map((i) => i.displayName).find((n) => /GOES/.test(n) && />10 MeV/.test(n)),
+    flares: new Set((e.linkedEvents ?? []).map((x) => x.activityID)),
+  }))
+  .sort((a, b) => a.t - b.t)
+const bucketOf = (v) => (v >= 5e-4 ? 'x5' : v >= 1e-4 ? 'x1' : 'm5')
+const stormFlareIds = new Map(storms.map((s) => [/FLR (\d+)/.exec(s.flare.source)?.[1], s.id]))
+const bigFlares = FLR.filter((e) => e.classType && e.peakTime && classValue(e.classType) >= 5e-5).sort((a, b) => Date.parse(a.peakTime) - Date.parse(b.peakTime))
+const stats = { m5: { n: 0, followed: 0 }, x1: { n: 0, followed: 0 }, x5: { n: 0, followed: 0 } }
+const flareEntries = []
+let followedNotUsed = 0
+// Clues the child can read on a flare: the size (class), a gas cloud (a CME linked to the flare in DONKI),
+// and which side of the Sun it came from (east or west, from the flare's source location, e.g. S15E77).
+const hasCloud = (e) => (e.linkedEvents ?? []).some((x) => /-CME-/.test(x.activityID))
+const sideOf = (e) => {
+  const m = /^[NS]\d+([EW])\d+$/.exec(e.sourceLocation ?? '')
+  return m ? (m[1] === 'W' ? 'west' : 'east') : null
+}
+const clueStats = {}
+const tally = (id, label, followed) => {
+  clueStats[id] ??= { id, label, n: 0, followed: 0 }
+  clueStats[id].n++
+  if (followed) clueStats[id].followed++
+}
+for (const e of bigFlares) {
+  const peak = Date.parse(e.peakTime)
+  const sep = goesRadiation.find((r) => r.t >= peak && r.t <= peak + WINDOW_H * 3_600_000)
+  const b = bucketOf(classValue(e.classType))
+  stats[b].n++
+  if (sep) stats[b].followed++
+  const cloud = hasCloud(e)
+  const side = sideOf(e)
+  tally(cloud ? 'cloud-yes' : 'cloud-no', cloud ? 'A gas cloud was seen' : 'No gas cloud', Boolean(sep))
+  if (side) tally(`side-${side}`, side === 'west' ? 'West side of the Sun' : 'East side of the Sun', Boolean(sep))
+  if (side) tally(`${cloud ? 'cloud' : 'nocloud'}-${side}`, `${cloud ? 'Cloud' : 'No cloud'}, ${side} side`, Boolean(sep))
+  const flareId = /FLR\/(\d+)\//.exec(e.link)?.[1]
+  const stormId = stormFlareIds.get(flareId) ?? null
+  // Followed flares are only used in the game when they are one of our 8 real storms (we have that storm's size and curve).
+  if (sep && !stormId) {
+    followedNotUsed++
+    continue
+  }
+  const hours = sep ? Math.round(((sep.t - peak) / 3_600_000) * 10) / 10 : null
+  flareEntries.push({
+    id: `flr-${flareId}`,
+    class: e.classType,
+    peakTime: e.peakTime,
+    link: e.link,
+    followed: Boolean(sep),
+    stormId: sep ? stormId : null,
+    cloud,
+    side,
+    location: e.sourceLocation ?? null,
+    sep: sep ? { id: sep.id, time: sep.time, hoursAfterPeak: hours, delayDays: Math.max(1, Math.ceil(hours / 24)), link: sep.link, instrument: sep.instrument, linked: sep.flares.has(e.flrID) } : null,
+  })
+}
+const share = (o) => Math.round((100 * o.followed) / o.n)
+const total = { n: stats.m5.n + stats.x1.n + stats.x5.n, followed: stats.m5.followed + stats.x1.followed + stats.x5.followed }
+const RULE = `A flare counts as "followed by space rays" when a real-instrument (not model) NASA DONKI radiation-storm record from a GOES >10 MeV detector starts within ${WINDOW_H} hours after the flare's peak. Only flares of class M5 or bigger are counted.`
+write('flares.json', {
+  rule: RULE,
+  windowHours: WINDOW_H,
+  source: 'NASA DONKI FLR and SEP records, archive pulled 2026-11-12 (raw/donki/MANIFEST.json); labelled by scripts/ingest.mjs',
+  note: `Followed flares that are not one of our 8 real storms (${followedNotUsed}) are counted in the statistics but not used in the game, because we have no size or curve for them. Flares that were not followed are all kept.`,
+  flares: flareEntries,
+})
+write('flareStats.json', {
+  rule: RULE,
+  windowHours: WINDOW_H,
+  source: 'NASA DONKI FLR and SEP records, archive pulled 2026-11-12; counted by scripts/ingest.mjs',
+  buckets: [
+    { id: 'm5', label: 'M5 to M9.9', n: stats.m5.n, followed: stats.m5.followed, percent: share(stats.m5) },
+    { id: 'x1', label: 'X1 to X4.9', n: stats.x1.n, followed: stats.x1.followed, percent: share(stats.x1) },
+    { id: 'x5', label: 'X5 and bigger', n: stats.x5.n, followed: stats.x5.followed, percent: share(stats.x5), note: 'Only a few flares this big, so this share is rough.' },
+  ],
+  total: { n: total.n, followed: total.followed, percent: share(total) },
+  clues: Object.values(clueStats)
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((c) => ({ ...c, percent: share(c) })),
+})
+
 // ---------- dataset list for the "Where the data comes from" screen ----------
 write('sources.json', [
   { id: 'donki', name: 'NASA DONKI', gives: 'Real solar flares, space-ray storms and magnetic storms. Storm cards and Today’s Sun.', url: 'https://ccmc.gsfc.nasa.gov/DONKI/', licence: 'US Government, public domain', note: 'Archive pulled 12 Nov 2026. One radiation-storm record exists per detector, so we count storms, not records.' },

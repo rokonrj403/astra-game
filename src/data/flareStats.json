@@ -1,0 +1,92 @@
+{
+  "rule": "A flare counts as \"followed by space rays\" when a real-instrument (not model) NASA DONKI radiation-storm record from a GOES >10 MeV detector starts within 72 hours after the flare's peak. Only flares of class M5 or bigger are counted.",
+  "windowHours": 72,
+  "source": "NASA DONKI FLR and SEP records, archive pulled 2026-11-12; counted by scripts/ingest.mjs",
+  "buckets": [
+    {
+      "id": "m5",
+      "label": "M5 to M9.9",
+      "n": 268,
+      "followed": 47,
+      "percent": 18
+    },
+    {
+      "id": "x1",
+      "label": "X1 to X4.9",
+      "n": 144,
+      "followed": 44,
+      "percent": 31
+    },
+    {
+      "id": "x5",
+      "label": "X5 and bigger",
+      "n": 12,
+      "followed": 7,
+      "percent": 58,
+      "note": "Only a few flares this big, so this share is rough."
+    }
+  ],
+  "total": {
+    "n": 424,
+    "followed": 98,
+    "percent": 23
+  },
+  "clues": [
+    {
+      "id": "cloud-east",
+      "label": "Cloud, east side",
+      "n": 111,
+      "followed": 25,
+      "percent": 23
+    },
+    {
+      "id": "cloud-no",
+      "label": "No gas cloud",
+      "n": 161,
+      "followed": 20,
+      "percent": 12
+    },
+    {
+      "id": "cloud-west",
+      "label": "Cloud, west side",
+      "n": 152,
+      "followed": 53,
+      "percent": 35
+    },
+    {
+      "id": "cloud-yes",
+      "label": "A gas cloud was seen",
+      "n": 263,
+      "followed": 78,
+      "percent": 30
+    },
+    {
+      "id": "nocloud-east",
+      "label": "No cloud, east side",
+      "n": 84,
+      "followed": 8,
+      "percent": 10
+    },
+    {
+      "id": "nocloud-west",
+      "label": "No cloud, west side",
+      "n": 77,
+      "followed": 12,
+      "percent": 16
+    },
+    {
+      "id": "side-east",
+      "label": "East side of the Sun",
+      "n": 195,
+      "followed": 33,
+      "percent": 17
+    },
+    {
+      "id": "side-west",
+      "label": "West side of the Sun",
+      "n": 229,
+      "followed": 65,
+      "percent": 28
+    }
+  ]
+}

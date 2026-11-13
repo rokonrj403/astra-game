@@ -1208,7 +1208,7 @@ button:active:not(:disabled) {
   gap: 12px;
 }
 .mode .strong {
-  color: var(--radiation);
+  color: #ff9a55;
   font-weight: 800;
 }
 .daydots {
@@ -1741,4 +1741,46 @@ html.calm *::after {
   place-items: center;
   gap: 2px;
   align-self: center;
+}
+
+/* Crew card choices: a picture of the action, one or two words, and what it costs or gives. */
+.living .sc-bubble .cap {
+  flex: 0 0 100%;
+  font-size: 0.95rem;
+}
+.living .sc-bubble:has(.optbtn) .sc-bubble-body {
+  flex-wrap: wrap;
+}
+.optbtn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: #1b2a4d;
+  color: var(--text);
+  border: 3px solid #34476e;
+  border-radius: 16px;
+}
+.optbtn[aria-pressed='true'] {
+  border-color: var(--sun);
+  background: #26385f;
+}
+.optrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.optword {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: left;
+}
+.optbtn .fx {
+  gap: 4px;
 }

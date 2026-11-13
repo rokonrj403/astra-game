@@ -108,8 +108,8 @@ export function SunScreen({ sun, onBack }: { sun: SunView | null; onBack: () => 
           )}
           <section className="shelf" aria-label="Magnetic storm">
             {sun.magneticStorm ? (
-              <div className="row between" role="img" aria-label={`Latest magnetic storm: Kp ${sun.magneticStorm.kp} on ${when(sun.magneticStorm.time)}`}>
-                <span className="dots big" aria-hidden="true">
+              <div className="row between" role="group" aria-label={`Latest magnetic storm: Kp ${sun.magneticStorm.kp} on ${when(sun.magneticStorm.time)}`}>
+                <span className="dots big" role="img" aria-label={`Kp ${sun.magneticStorm.kp} of 9`}>
                   {Array.from({ length: 9 }, (_, i) => (
                     <i key={i} className={i < sun.magneticStorm!.kp ? 'on' : undefined} />
                   ))}

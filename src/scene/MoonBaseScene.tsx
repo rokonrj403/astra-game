@@ -35,6 +35,8 @@ export interface MoonBaseSceneProps {
   blocksLeft?: number
   /** +/- buttons: under the chosen building (default), under all of them, or never. */
   steppers?: 'selected' | 'always' | 'never'
+  /** Vertical centre of the +/- buttons on the 360 x 440 board (default 330). Raised while a bubble sits in the ground band. */
+  stepperY?: number
   onAdd?: (t: Target) => void
   onRemove?: (t: Target) => void
   onSunTap?: () => void
@@ -62,7 +64,7 @@ const PLANNED: Record<number, WalkKind | undefined> = { 1: 'short', 2: 'long' }
  * The living Moon base, one 360 x 440 SVG (scales to the screen) with HTML bubbles laid over it.
  * Props in, picture out: nothing here reads the game or knows how a flare ends. There are no words in the picture.
  */
-export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, children, ref }: MoonBaseSceneProps) {
+export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', stepperY, onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, children, ref }: MoonBaseSceneProps) {
   const root = useRef<HTMLDivElement>(null)
   const latest = useRef(model)
   latest.current = model
@@ -162,7 +164,7 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
         </g>
 
         {stepTargets.map((t) => (
-          <Stepper key={t} target={t} count={blocks[t]} canAdd={left > 0 && (t !== 'radio' || model.earth)} onAdd={onAdd} onRemove={onRemove} />
+          <Stepper key={t} target={t} y={stepperY} count={blocks[t]} canAdd={left > 0 && (t !== 'radio' || model.earth)} onAdd={onAdd} onRemove={onRemove} />
         ))}
         <ClueTags tags={clueTags} open={tagsOpen} x={sun.x} y={sun.y + 48} />
         <rect className="sc-dim sc-fade" width={W} height={H} fill="#0f1a33" opacity={dim ? 0.55 : 0} style={{ pointerEvents: 'none' }} />

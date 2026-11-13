@@ -155,7 +155,7 @@ export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBa
         {(['cadet', 'commander'] as const).map((m) => {
           const rules = MODES[m]
           return (
-            <button key={m} className="choice mode" onClick={() => onPick(m)} aria-label={`${MODE_CARDS[m].name}: ${MODE_CARDS[m].lines.join(', ')}`}>
+            <button key={m} className="choice mode" onClick={() => onPick(m)} aria-label={`${MODE_CARDS[m].name}${m === 'commander' ? ' Stronger storms' : ''}: ${MODE_CARDS[m].lines.filter((l) => l !== 'Stronger storms').join(', ')}`}>
               <span className="name">{MODE_CARDS[m].name}</span>
               <span className="modeart" aria-hidden="true">
                 <BurstArt cls={m === 'commander' ? 'X5.0' : 'M5.0'} />
@@ -175,7 +175,12 @@ export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBa
                 <Star size={26} color="var(--sun)" fill="var(--sun)" />
                 {rules.hasFood && <Sparkles size={24} color="var(--plants)" />}
               </span>
-              {m === 'commander' && <span className="strong">Stronger storms</span>}
+              {m === 'commander' && (
+                <>
+                  {' '}
+                  <span className="strong">Stronger storms</span>
+                </>
+              )}
             </button>
           )
         })}
@@ -471,7 +476,7 @@ export function Why({ game, onNext, onData }: { game: GameState; onNext: () => v
           </button>
         )}
         <button className="primary big" onClick={onNext} aria-label="See my mission">
-          <ArrowRight size={26} aria-hidden="true" /> Next
+          <ArrowRight size={26} aria-hidden="true" />
         </button>
       </div>
     </main>

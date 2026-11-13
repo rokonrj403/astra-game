@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowRight, ArrowUp, Database, Volume2, X, Footprints, Radiation, Sparkles, Sprout, TriangleAlert, Wind, Zap, type LucideIcon } from 'lucide-react'
+import { ArrowRight, Database, Volume2, X } from 'lucide-react'
 import { blockPlaced, cardFlip, dayStart, moonwalk, shieldHum, shieldHumStop } from '../audio'
 import { BLOCKS } from '../engine/constants'
 import { flareById } from '../engine/flares'
 import { activeStorm, activeWatch, currentCard, radioAvailable } from '../engine/game'
-import type { Choice, GameState, Guess, Jobs, Option, Walk } from '../engine/types'
+import type { Choice, GameState, Guess, Jobs, Walk } from '../engine/types'
 import { browserStore, readJSON, writeJSON } from '../live/store'
 import type { SunView } from '../live/sun'
 import {
@@ -14,7 +14,6 @@ import {
   MoonBaseScene,
   NO_BLOCKS,
   OrbiBubble,
-  PictureButton,
   PowerTray,
   revealFromRecord,
   sceneModelFromGame,
@@ -31,6 +30,7 @@ import { flareCue, lowToday, lowWarning, moodFor, setMood } from './cues'
 import { prefersReducedMotion } from './motion'
 import { DaySummary, NextButton } from './screens'
 import { sfx } from './sfx'
+import { CARD_ART, FALLBACK, OptionButton } from './cardart'
 import { Paw, TOUR_KEY, type TourStep } from './paw'
 import { canSpeak, Speak, speak } from './speech'
 import { SunChip } from './sunscreens'
@@ -40,30 +40,6 @@ const used = (b: Blocks) => b.air + b.shield + b.plants + b.radio + b.walk
 const toGuess = (g: SceneGuess): Guess => (g === 'rays' ? 'yes' : g === 'calm' ? 'no' : 'unsure')
 const toScene = (g: Guess): SceneGuess => (g === 'yes' ? 'rays' : g === 'no' ? 'calm' : 'unsure')
 const meters = (g: GameState) => ({ air: g.air, power: g.power, radiation: g.radiation, food: g.food })
-
-/** What a choice does, as pictures: a small icon with an up or down arrow for each thing it changes. No words. */
-function Effects({ o }: { o: Option }) {
-  const chips: { Icon: LucideIcon; up: boolean; color: string }[] = []
-  if (o.science) chips.push({ Icon: Sparkles, up: o.science > 0, color: 'var(--sun)' })
-  if (o.power) chips.push({ Icon: Zap, up: o.power > 0, color: 'var(--power)' })
-  if (o.air) chips.push({ Icon: Wind, up: o.air > 0, color: 'var(--air)' })
-  if (o.food) chips.push({ Icon: Sprout, up: o.food > 0, color: 'var(--plants)' })
-  if (o.radiation) chips.push({ Icon: Radiation, up: o.radiation > 0, color: 'var(--radiation)' })
-  if (o.slowWalk) chips.push({ Icon: Footprints, up: false, color: 'var(--muted)' })
-  if (o.slowPlants) chips.push({ Icon: Sprout, up: false, color: 'var(--muted)' })
-  if (o.failChance) chips.push({ Icon: TriangleAlert, up: true, color: 'var(--radiation)' })
-  if (chips.length === 0) chips.push({ Icon: ArrowRight, up: true, color: 'var(--muted)' })
-  return (
-    <span className="fx" aria-hidden="true">
-      {chips.slice(0, 4).map(({ Icon, up, color }, i) => (
-        <span key={i}>
-          <Icon size={18} color={color} />
-          {up ? <ArrowUp size={14} color={color} /> : <ArrowDown size={14} color={color} />}
-        </span>
-      ))}
-    </span>
-  )
-}
 
 export interface LivingProps {
   game: GameState
@@ -245,7 +221,8 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
         ref={scene}
         model={model}
         calm={calm}
-        hot={hot}
+        hot={tourStep === 'habitat' ? 'air' : tourStep === 'dome' ? 'shield' : hot}
+        stepperY={stage === 'card' ? 296 : undefined}
         blocksLeft={left}
         onAdd={add}
         onRemove={remove}
@@ -259,18 +236,16 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
         {stage === 'guess' && <OrbiBubble picked={guess ? toScene(guess) : null} onGuess={(g) => setGuess(toGuess(g))} />}
         {stage === 'card' && card && (
           <CrewBubble who={card.who[0]!}>
-            <span className="cap">{card.question}</span>
-            <PictureButton label={card.a.label} pressed={go === true} onClick={() => setGo(true)}>
-              <Effects o={card.a} />
-            </PictureButton>
-            <PictureButton label={card.b.label} pressed={go === false} onClick={() => setGo(false)}>
-              <Effects o={card.b} />
-            </PictureButton>
+            <span className="cap" aria-label={card.question}>
+              {(CARD_ART[card.id] ?? { q: card.question }).q}
+            </span>
+            <OptionButton pic={CARD_ART[card.id]?.a ?? FALLBACK} option={card.a} pressed={go === true} onClick={() => setGo(true)} />
+            <OptionButton pic={CARD_ART[card.id]?.b ?? FALLBACK} option={card.b} pressed={go === false} onClick={() => setGo(false)} />
           </CrewBubble>
         )}
         {tourStep === 'sun' && <Paw x={sunPos(game.day, game.totalDays).x + 14} y={sunPos(game.day, game.totalDays).y + 18} />}
         {tourStep === 'habitat' && <Paw x={zoneCenter('air').x} y={zoneCenter('air').y} />}
-        {tourStep === 'dome' && <Paw x={zoneCenter('shield').x} y={190} />}
+        {tourStep === 'dome' && <Paw x={zoneCenter('shield').x} y={128} />}
         {tourStep === 'guess' && <Paw x={150} y={385} />}
         {canSpeak() && (
           <button className="hear" onClick={() => speak(aloud)} aria-label="Hear ORBI" title="Hear ORBI">

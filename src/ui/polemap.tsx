@@ -149,7 +149,7 @@ export function PoleMap({ selected, onSelect, hint }: { selected: string | null;
             key={s.id}
             className="place pin"
             aria-pressed={selected === s.id}
-            aria-label={s.name}
+            aria-label={s.name.includes(SHORT[s.id]!) ? s.name : `${SHORT[s.id]}, ${s.name}`}
             title={s.name}
             style={{ left: `${((p.x - PIN_W / 2) / BOX_W) * 100}%`, top: `${((p.y - PIN_H / 2) / BOX_H) * 100}%`, width: `${(PIN_W / BOX_W) * 100}%`, height: `${(PIN_H / BOX_H) * 100}%` }}
             onClick={() => onSelect(s.id)}

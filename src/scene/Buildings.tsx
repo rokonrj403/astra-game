@@ -199,10 +199,10 @@ export function DomeTarget({ count, hot, selected, onSelect }: { count: number; 
 }
 
 /** The +/- fallback for kids who do not drag: two 44 px round buttons under the chosen building. */
-export function Stepper({ target, count, canAdd, onAdd, onRemove }: { target: Target; count: number; canAdd: boolean; onAdd?: (t: Target) => void; onRemove?: (t: Target) => void }) {
+export function Stepper({ target, count, canAdd, onAdd, onRemove, y }: { target: Target; count: number; canAdd: boolean; onAdd?: (t: Target) => void; onRemove?: (t: Target) => void; y?: number }) {
   const c = zoneCenter(target)
   const cx = Math.max(50, Math.min(310, c.x))
-  const cy = target === 'shield' ? 332 : 330
+  const cy = y ?? (target === 'shield' ? 332 : 330)
   const max = ZONES[target].max
   const canRemove = count > 0
   const addOk = canAdd && count < max

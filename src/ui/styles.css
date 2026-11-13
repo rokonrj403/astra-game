@@ -2384,6 +2384,7 @@ body:has(.attract) .twin {
   to {
     transform: rotate(5deg);
   }
+}
 /* Reveal card: three columns that shrink to fit the row (no spill past the card), and the End title clear of the cue chip. */
 .row.between {
   gap: 8px;

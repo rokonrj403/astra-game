@@ -7,6 +7,7 @@ import {
   AIR_DRAIN,
   AIR_PER_BLOCK,
   BLOCKS,
+  GUESS_REWARD,
   MODES,
   PLANT_SCIENCE,
   POWER_DARK,
@@ -23,12 +24,12 @@ import {
 import { flareById } from './flares'
 import { activeStorm, activeWatches, badges, currentCard, explain, newGame, radioAvailable, radioDelay, score, step } from './game'
 import { makeRng } from './rng'
-import type { Choice, GameState, Jobs, StormPlan, Walk } from './types'
+import type { Choice, GameState, Guess, Jobs, StormPlan, Walk } from './types'
 
 const J = (air = 0, shield = 0, plants = 0, radio = 0): Jobs => ({ air, shield, plants, radio })
 const C = (jobs: Jobs, go = false, walk: Walk = 'none'): Choice => ({ jobs, go, walk })
 const rng = () => makeRng(1)
-const calm = (g: GameState): GameState => ({ ...g, storms: [], flares: [], flareSeen: [], flareResolved: [] })
+const calm = (g: GameState): GameState => ({ ...g, storms: [], flares: [], flareSeen: [], flareResolved: [], guesses: [] })
 const storm = (arrivalDay: number, size: 'small' | 'big' | 'huge', profile: number[], stormId = 'storm-6'): StormPlan => ({ stormId, arrivalDay, size, profile })
 /** A game with one real storm and its real flare the day before. */
 const withStorm = (g: GameState, s: StormPlan, seen = false): GameState => ({
@@ -37,6 +38,7 @@ const withStorm = (g: GameState, s: StormPlan, seen = false): GameState => ({
   flares: [{ flareId: 'flr-44029', day: s.arrivalDay - 1, stormIndex: 0 }],
   flareSeen: [seen],
   flareResolved: [false],
+  guesses: [null],
 })
 const sunny = (g: GameState): GameState => ({ ...g, sunDays: g.sunDays.map(() => true) })
 const dark = (g: GameState): GameState => ({ ...g, sunDays: g.sunDays.map(() => false) })
@@ -356,6 +358,70 @@ describe('the flare watch', () => {
     expect(activeStorm(s)).not.toBeNull()
     s = step(s, C(J(0, 4)), rng())
     expect(activeStorm(s)).toBeNull()
+  })
+})
+
+describe('guess first, then see', () => {
+  /** Day 3, a real flare was seen on day 2. A storm follows (`rays`) arriving today, or the flare is a quiet one (a real flare that brought no rays). */
+  const watched = (rays: boolean): GameState => {
+    const base = { ...calm(newGame({ mode: 'cadet', siteId: 'region-3', seed: 2 })), day: 3, shield: 6 }
+    return rays
+      ? { ...withStorm(base, storm(3, 'small', [1]), true), day: 3 }
+      : { ...base, flares: [{ flareId: 'flr-29334', day: 2, stormIndex: null }], flareSeen: [true], flareResolved: [false], guesses: [null], day: 5 }
+  }
+  const play = (g: GameState, guess?: Guess) => step(g, { jobs: J(2), go: false, walk: 'none', ...(guess ? { guess } : {}) }, rng())
+
+  it('a guess is kept for the newest open flare watch and stays private until the reveal', () => {
+    const n = play(watched(true), 'yes')
+    expect(n.guesses[0]).toBe('yes')
+    expect(n.history[0]!.guessed).toBe('flr-44029')
+  })
+
+  it('saying yes when rays come earns science; the reveal shows the guess and the reward', () => {
+    const g = watched(true)
+    const base = play(g)
+    const right = play(g, 'yes')
+    const r = right.history[0]!.resolved[0]!
+    expect([r.followed, r.guess, r.reward]).toEqual([true, 'yes', GUESS_REWARD])
+    expect(right.science).toBe(base.science + GUESS_REWARD)
+  })
+
+  it('saying no when no rays come earns science', () => {
+    const g = watched(false)
+    const base = play(g)
+    expect(base.history[0]!.resolved).toHaveLength(1)
+    const right = play(g, 'no')
+    const r = right.history[0]!.resolved[0]!
+    expect([r.followed, r.guess, r.reward]).toEqual([false, 'no', GUESS_REWARD])
+    expect(right.science).toBe(base.science + GUESS_REWARD)
+  })
+
+  it('a wrong guess or "not sure" earns nothing and costs nothing', () => {
+    const yesWorld = watched(true)
+    const noWorld = watched(false)
+    for (const [g, guess] of [[yesWorld, 'no'], [yesWorld, 'unsure'], [noWorld, 'yes'], [noWorld, 'unsure']] as const) {
+      const base = play(g)
+      const n = play(g, guess)
+      expect(n.history[0]!.resolved[0]!.reward).toBe(0)
+      expect(n.science).toBe(base.science)
+      expect(n.air).toBe(base.air)
+      expect(n.status).toBe(base.status)
+    }
+  })
+
+  it('a guess with no flare watch on is ignored, and a flare keeps its first guess', () => {
+    const calmDay = play({ ...calm(newGame({ mode: 'cadet', siteId: 'region-3', seed: 2 })), day: 2 }, 'yes')
+    expect(calmDay.history[0]!.guessed).toBeNull()
+    const first = play(watched(true), 'unsure')
+    const again = step({ ...first, day: 3, status: 'playing', flareResolved: [false] }, { jobs: J(2), go: false, guess: 'yes' }, rng())
+    expect(again.guesses[0]).toBe('unsure')
+  })
+
+  it('the guess never changes what happens: same state, same outcome with or without it', () => {
+    const g = watched(true)
+    const a = play(g)
+    const b = play(g, 'yes')
+    expect([a.radiation, a.power, a.status]).toEqual([b.radiation, b.power, b.status])
   })
 })
 

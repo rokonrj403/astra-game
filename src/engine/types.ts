@@ -8,6 +8,8 @@ export type BadgeId = 'first-day' | 'storm-survivor' | 'green-thumb' | 'radio-he
 export type CrewName = 'safia' | 'kofi' | 'leo' | 'mei'
 /** A moonwalk is a bet: science if the day is calm, radiation if a storm hits while the crew is outside. The shield never protects walkers. */
 export type Walk = 'none' | 'short' | 'long'
+/** The child's guess for a flare: will space rays come? Asked before the answer is known; a wrong guess costs nothing. */
+export type Guess = 'yes' | 'no' | 'unsure'
 
 export interface Choice {
   jobs: Jobs
@@ -15,6 +17,8 @@ export interface Choice {
   go: boolean
   /** Moonwalk today. Costs blocks from the same 6. Default none. */
   walk?: Walk
+  /** A guess for the newest flare watch that has no guess yet. Optional. */
+  guess?: Guess
 }
 
 export interface StormPlan {
@@ -77,8 +81,10 @@ export interface DayRecord {
   watching: boolean
   /** Flares that showed up in this morning's Sun Watch. */
   reported: string[]
-  /** Flares whose watch ended today, with what really happened (shown with the NASA record). */
-  resolved: { flareId: string; followed: boolean }[]
+  /** The flare the player guessed about today, if any. */
+  guessed: string | null
+  /** Flares whose watch ended today, with what really happened (shown with the NASA record), the guess, and the science a good guess earned. */
+  resolved: { flareId: string; followed: boolean; guess: Guess | null; reward: number }[]
   /** Shield charge at the end of the day, after it leaked 1. */
   shieldAfter: number
   before: Meters
@@ -109,6 +115,8 @@ export interface GameState extends Meters {
   flareSeen: boolean[]
   /** Which flares have already been explained ("this flare did / did not bring space rays"). */
   flareResolved: boolean[]
+  /** The guess for each flare, or null. Private until the reveal. */
+  guesses: (Guess | null)[]
   history: DayRecord[]
 }
 

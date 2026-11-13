@@ -1,6 +1,36 @@
+import { writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 
 const W = 360
+
+/** Visible words on the screen (or inside `selector`): text that is shown, not hidden and not aria-hidden. Numbers count as words. */
+async function countWords(page: Page, selector = 'main'): Promise<number> {
+  return page.evaluate((sel) => {
+    // A screen opened over the base screen leaves the base mounted but hidden, so look at every match and skip what is hidden.
+    let n = 0
+    for (const root of document.querySelectorAll(sel)) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const el = node.parentElement
+        if (!el || el.closest('[aria-hidden="true"], [hidden]')) continue
+        const cs = getComputedStyle(el)
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue
+        n += (node.textContent ?? '').trim().split(/\s+/).filter(Boolean).length
+      }
+    }
+    return n
+  }, selector)
+}
+
+// The word count of every screen the phone check visits, written to e2e-shots/words.json for the string audit.
+const wordLog: { screen: string; words: number }[] = []
+test.afterAll(() => {
+  try {
+    writeFileSync('e2e-shots/words.json', JSON.stringify(wordLog, null, 2))
+  } catch {
+    /* the folder only exists after a run */
+  }
+})
 
 /**
  * Looks at the screen as a kid on a small phone would:
@@ -11,6 +41,7 @@ const W = 360
  */
 async function audit(page: Page, name: string) {
   await page.waitForLoadState('networkidle')
+  wordLog.push({ screen: name, words: await countWords(page) })
   await page.screenshot({ path: `e2e-shots/${name}.png`, fullPage: true })
   const issues = await page.evaluate((width) => {
     const out: string[] = []
@@ -97,6 +128,17 @@ test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async (
   await audit(page, '08-report')
 })
 
+test('the Flare Journal fits the phone and is stickers, not sentences', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Flare Journal' }).click()
+  await expect(page.getByRole('heading', { name: 'Flare Journal' })).toBeVisible()
+  await audit(page, '17-journal')
+  expect(await countWords(page), 'journal words').toBeLessThanOrEqual(12)
+  await page.getByRole('button', { name: 'No gas cloud' }).click()
+  await page.locator('.sticker button').first().click()
+  await audit(page, '18-journal-filtered')
+})
+
 test('settings and for-teachers fit', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Settings' }).click()
@@ -125,7 +167,11 @@ test('the storm, radio call, why-it-happened, end and card screens fit', async (
       const radio = page.getByRole('button', { name: 'More blocks for Radio' })
       if (await radio.isEnabled()) await radio.click()
       if (await page.getByRole('alert').isVisible()) {
-        if (!seen.has('alert')) await audit(page, '09-base-storm-alert')
+        if (!seen.has('alert')) {
+          await audit(page, '09-base-storm-alert')
+          // HARD RULE: the flare watch is pictures. Three words at most.
+          expect(await countWords(page, '[aria-label="Flare watch"]'), 'flare watch words').toBeLessThanOrEqual(3)
+        }
         seen.add('alert')
         if (!seen.has('now') && (await page.getByRole('alert').textContent())?.includes('Storm today')) {
           seen.add('now')

@@ -49,8 +49,9 @@ describe('bot balance: careful play wins, careless play does not', () => {
     it(`walking a long walk every day is clearly worse than careful play in ${mode}`, () => {
       expect(winRate('alwaysWalk', mode)).toBeLessThan(winRate('smart', mode) - 0.4)
     })
-    it(`reading the clues beats ignoring them in ${mode}`, () => {
-      expect(winRate('ignoreClues', mode)).toBeLessThan(winRate('smart', mode) - 0.1)
+    it(`reading the clues beats ignoring them in ${mode}: the clue-blind bot wins 60% or less`, () => {
+      expect(winRate('ignoreClues', mode)).toBeLessThan(winRate('smart', mode) - 0.2)
+      expect(winRate('ignoreClues', mode)).toBeLessThanOrEqual(0.6)
     })
     it(`careful wins are close calls about as often as not in ${mode} (35 to 65% end with a bar under 30)`, () => {
       // The careful bot spends its power down to a small reserve, so this reads a little high; the point is that wins are not easy.

@@ -39,8 +39,8 @@ export interface ModeRules {
 }
 
 export const MODES: Record<Mode, ModeRules> = {
-  cadet: { days: 10, hasFood: false, stormBoost: 1, stormCount: 1, decoys: 1, goal: 28 },
-  commander: { days: 20, hasFood: true, stormBoost: 1.8, stormCount: 2, decoys: 2, goal: 38 },
+  cadet: { days: 10, hasFood: false, stormBoost: 1, stormCount: 1, decoys: 1, goal: 32 },
+  commander: { days: 20, hasFood: true, stormBoost: 1.8, stormCount: 2, decoys: 2, goal: 43 },
 }
 
 /** A flare watch lasts 3 days from the flare: NASA counted a radiation storm as "following" a flare up to 72 hours later. */
@@ -50,6 +50,8 @@ export const SHIELD_MAX = 6
 export const SHIELD_LEAK = 2
 /** The shield machine is hungry: each block on the Shield costs this much extra power, on top of the normal block cost. */
 export const SHIELD_EXTRA_POWER = 1
+/** Science for a good guess (said yes and rays came, or no and they did not). Saying "not sure" or guessing wrong earns nothing and costs nothing. */
+export const GUESS_REWARD = 2
 /** Radio: send data to Earth. Each block brings science, up to a limit. The reply takes about 2.6 s. Earth must be in view. */
 export const RADIO_SCIENCE = 1
 export const RADIO_SCIENCE_MAX = 2

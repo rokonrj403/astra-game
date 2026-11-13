@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Globe, Moon, Radiation, Radio, Sun, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, Check, Globe, Moon, Radiation, Radio, Sparkles, Sun, type LucideIcon } from 'lucide-react'
 import sites from '../data/sites.json'
 import storms from '../data/storms.json'
 import { MODE_CARDS, RADIO_SCIENCE, RADIO_SCIENCE_MAX } from '../engine/constants'
@@ -9,6 +9,7 @@ import { flareById } from '../engine/flares'
 import type { BadgeId, DayRecord, GameState, Loss, Mode } from '../engine/types'
 import { OrbiFace } from './art'
 import { METERS } from './base'
+import { FlareSun, GuessReveal } from './pictos'
 import { Celebrate, CountUp } from './motion'
 import { sfx } from './sfx'
 import { Speak } from './speech'
@@ -26,6 +27,7 @@ export function Start({
   onCards,
   onSettings,
   onTeachers,
+  onJournal,
 }: {
   onPlay: () => void
   onData: () => void
@@ -33,6 +35,7 @@ export function Start({
   onCards: () => void
   onSettings: () => void
   onTeachers: () => void
+  onJournal: () => void
 }) {
   return (
     <main className="app">
@@ -49,6 +52,9 @@ export function Start({
           </button>
           <button className="link" onClick={onCards}>
             My storm cards
+          </button>
+          <button className="link" onClick={onJournal}>
+            Flare Journal
           </button>
           <button className="link" onClick={onSettings}>
             Settings
@@ -165,29 +171,35 @@ function RadioCall({ r }: { r: DayRecord }) {
   )
 }
 
-/** New flares in the Sun Watch, and what really happened after the flares the player was watching. All from NASA's records. */
-function FlareNews({ r }: { r: DayRecord }) {
+/**
+ * New flares in the Sun Watch, and what really happened after the flares the child was watching: all pictures.
+ * A reveal shows the child's guess next to NASA's record, a check or cross, and the science a good read earned.
+ */
+function FlareNews({ r, game }: { r: DayRecord; game: GameState }) {
   if (r.reported.length === 0 && r.resolved.length === 0) return null
+  const side = game.mode === 'commander'
   return (
     <section className="card stack" aria-label="Flare news">
       {r.reported.map((id) => {
         const f = flareById(id)
         return f ? (
-          <p key={`new-${id}`}>
-            <b>New in the Sun Watch:</b> a real {f.class} flare on {when(f.peakTime)}. {f.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Watch the next 3 days.
-          </p>
+          <div key={`new-${id}`} className="row" role="group" aria-label="A new flare on the Sun">
+            <Sparkles size={26} color="var(--sun)" aria-hidden="true" />
+            <FlareSun flare={f} showSide={side} width={116} />
+          </div>
         ) : null
       })}
-      {r.resolved.map(({ flareId, followed }) => {
+      {r.resolved.map(({ flareId, followed, guess, reward }) => {
         const f = flareById(flareId)
         if (!f) return null
         return (
-          <p key={`res-${flareId}`}>
-            <b>Result:</b> the {f.class} flare of {when(f.peakTime)} {followed ? 'did bring space rays' : 'did not bring space rays'}.{' '}
-            <a href={followed && f.sep ? f.sep.link : f.link} target="_blank" rel="noreferrer">
-              NASA record
+          <div key={`res-${flareId}`} className="row between" role="group" aria-label="What really happened">
+            <FlareSun flare={f} showSide={side} width={100} />
+            <GuessReveal guess={guess} followed={followed} reward={reward} />
+            <a className="iconlink" href={followed && f.sep ? f.sep.link : f.link} target="_blank" rel="noreferrer" aria-label="NASA record">
+              <BadgeCheck size={24} aria-hidden="true" />
             </a>
-          </p>
+          </div>
         )
       })}
     </section>
@@ -271,7 +283,7 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
         </span>
       </div>
       {r.storm && <StormPanel game={game} index={r.storm.index} />}
-      <FlareNews r={r} />
+      <FlareNews r={r} game={game} />
       {r.radioWorked && <RadioCall r={r} />}
       {r.walk !== 'none' && (
         <p>

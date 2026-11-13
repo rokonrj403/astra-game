@@ -5,6 +5,7 @@ import {
   AIR_PER_BLOCK,
   BLOCKS,
   FOOD_DRAIN,
+  GUESS_REWARD,
   METER_MAX,
   MODES,
   PLANT_AIR,
@@ -181,6 +182,7 @@ export function newGame(o: NewGameOptions): GameState {
     flares: plan.flares,
     flareSeen: plan.flares.map(() => false),
     flareResolved: plan.flares.map(() => false),
+    guesses: plan.flares.map(() => null),
     history: [],
   }
 }
@@ -336,7 +338,18 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     }
   })
 
-  // A flare is explained when its storm arrives, or when its 3-day watch ends with nothing.
+  // A guess goes to the newest flare watch that has none yet. Nothing about it is shown until the reveal.
+  const guesses = [...state.guesses]
+  let guessed: string | null = null
+  if (choice.guess) {
+    const target = activeWatches(state).filter((w) => guesses[w.index] == null).pop()
+    if (target) {
+      guesses[target.index] = choice.guess
+      guessed = target.flare.flareId
+    }
+  }
+
+  // A flare is explained when its storm arrives, or when its 3-day watch ends with nothing. A good guess earns science.
   const flareResolved = [...state.flareResolved]
   const resolved: DayRecord['resolved'] = []
   state.flares.forEach((f, i) => {
@@ -344,10 +357,16 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     const own = f.stormIndex === null ? undefined : state.storms[f.stormIndex]
     if (own && own.arrivalDay === d) {
       flareResolved[i] = true
-      resolved.push({ flareId: f.flareId, followed: true })
+      const g = guesses[i] ?? null
+      const reward = g === 'yes' ? GUESS_REWARD : 0
+      science += reward
+      resolved.push({ flareId: f.flareId, followed: true, guess: g, reward })
     } else if (f.stormIndex === null && d >= f.day + WATCH_DAYS) {
       flareResolved[i] = true
-      resolved.push({ flareId: f.flareId, followed: false })
+      const g = guesses[i] ?? null
+      const reward = g === 'no' ? GUESS_REWARD : 0
+      science += reward
+      resolved.push({ flareId: f.flareId, followed: false, guess: g, reward })
     }
   })
 
@@ -380,6 +399,7 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     calledHome,
     watching,
     reported,
+    guessed,
     resolved,
     shieldAfter,
     before,
@@ -395,6 +415,7 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     carry: nextCarry,
     flareSeen,
     flareResolved,
+    guesses,
     history: [...state.history, record],
     status: loss ? 'lost' : lastDay ? 'won' : 'playing',
     day: loss || lastDay ? d : d + 1,

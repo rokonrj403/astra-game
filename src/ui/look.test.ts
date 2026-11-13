@@ -6,10 +6,10 @@ import { changeLine } from './screens'
 import { SHIELD_LETS_THROUGH } from '../engine/constants'
 import { crewMoods, domeY, letsThrough, particlePlan, sceneLabel, sceneState } from './look'
 
-const calm = (mode: 'cadet' | 'commander' = 'commander'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], flares: [], flareSeen: [], flareResolved: [] })
+const calm = (mode: 'cadet' | 'commander' = 'commander'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], flares: [], flareSeen: [], flareResolved: [], guesses: [] })
 const plan = (arrivalDay: number, profile = [1]): StormPlan => ({ stormId: 'storm-6', arrivalDay, size: 'big', profile })
 /** A real flare happened yesterday. If `seen`, the Sun Watch has shown it, so a flare watch is on today. The storm that follows is hidden. */
-const watched = (g: GameState, seen = true): GameState => ({ ...g, day: 3, storms: [plan(4)], flares: [{ flareId: 'flr-44029', day: 2, stormIndex: 0 }], flareSeen: [seen], flareResolved: [false] })
+const watched = (g: GameState, seen = true): GameState => ({ ...g, day: 3, storms: [plan(4)], flares: [{ flareId: 'flr-44029', day: 2, stormIndex: 0 }], flareSeen: [seen], flareResolved: [false], guesses: [null] })
 
 describe('crew faces', () => {
   it('everyone is happy when all bars are fine', () => {

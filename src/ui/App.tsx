@@ -2,19 +2,22 @@ import { useEffect, useState } from 'react'
 import { newGame, step } from '../engine/game'
 import { makeRng } from '../engine/rng'
 import type { Choice, GameState, Mode } from '../engine/types'
+import { addPlayed, type JournalEntry } from '../engine/journal'
 import { loadSun, type SunView } from '../live/sun'
 import { browserStore, readJSON, writeJSON } from '../live/store'
 import { Base } from './base'
 import { DataPage } from './DataPage'
+import { Journal } from './journal'
 import { Settings, Teachers } from './pages'
 import { setSoundEnabled, sfx } from './sfx'
 import { ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
 
-type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers'
-const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers']
+type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers' | 'journal'
+const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers', 'journal']
 const CARDS_KEY = 'astra-cards-v1'
+const JOURNAL_KEY = 'astra-journal-v1'
 
 /** Storms that really reached the base in this game. */
 function stormsMet(g: GameState): string[] {
@@ -32,6 +35,7 @@ export function App() {
   const [sun, setSun] = useState<SunView | null>(null)
   const [met, setMet] = useState<string[]>(() => readJSON<string[]>(browserStore(), CARDS_KEY) ?? [])
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs)
+  const [journal, setJournal] = useState<JournalEntry[]>(() => readJSON<JournalEntry[]>(browserStore(), JOURNAL_KEY) ?? [])
 
   useEffect(() => {
     setSoundEnabled(prefs.sound)
@@ -64,6 +68,13 @@ export function App() {
     if (!game) return
     const next = step(game, choice, makeRng(game.seed * 31 + game.day))
     setGame(next)
+    // What the child just learned goes into the Flare Journal, with their guess.
+    const learned = next.history[next.history.length - 1]?.resolved ?? []
+    if (learned.length > 0) {
+      const all = addPlayed(journal, learned)
+      setJournal(all)
+      writeJSON(browserStore(), JOURNAL_KEY, all)
+    }
     const now = stormsMet(next)
     if (now.some((id) => !met.includes(id))) {
       const all = [...new Set([...met, ...now])]
@@ -93,6 +104,7 @@ export function App() {
           onCards={() => open('cards')}
           onSettings={() => open('settings')}
           onTeachers={() => open('teachers')}
+          onJournal={() => open('journal')}
         />
       )
       break
@@ -130,6 +142,9 @@ export function App() {
       break
     case 'settings':
       other = <Settings prefs={prefs} onChange={changePrefs} onBack={() => setScreen(back)} />
+      break
+    case 'journal':
+      other = <Journal played={journal} onBack={() => setScreen(back)} />
       break
     case 'teachers':
       other = <Teachers onBack={() => setScreen(back)} onData={() => open('data')} />

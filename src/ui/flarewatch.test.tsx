@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { App } from './App'
 import { Base } from './base'
 import { Report } from './screens'
+import { MODES } from '../engine/constants'
 import { newGame, step } from '../engine/game'
 import { makeRng } from '../engine/rng'
 import type { GameState } from '../engine/types'
@@ -12,7 +13,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const calmGame = (mode: 'cadet' | 'commander' = 'cadet'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], flares: [], flareSeen: [], flareResolved: [] })
+const calmGame = (mode: 'cadet' | 'commander' = 'cadet'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], flares: [], flareSeen: [], flareResolved: [], guesses: [] })
 
 /** Day 3, a real flare (X1.9, gas cloud, east side) was seen on day 2. A storm follows, hidden: it arrives tomorrow or, if `today`, today. */
 const watchedGame = (mode: 'cadet' | 'commander' = 'cadet', today = false): GameState => ({
@@ -22,29 +23,63 @@ const watchedGame = (mode: 'cadet' | 'commander' = 'cadet', today = false): Game
   flares: [{ flareId: 'flr-44029', day: 2, stormIndex: 0 }],
   flareSeen: [true],
   flareResolved: [false],
+  guesses: [null],
 })
 
 const show = (g: GameState) => render(<Base game={g} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
 
 describe('the base screen', () => {
-  it('shows the real flare with its clues, and never says whether rays will come', () => {
+  it('draws the real flare on the Sun with picture clues, three guess buttons, and almost no words', () => {
     show(watchedGame())
     const watch = screen.getByLabelText('Flare watch')
-    expect(watch.textContent).toContain('day 1 of 3')
-    expect(watch.textContent).toContain('X1.9')
-    expect(watch.textContent).toContain('Gas cloud: yes')
-    expect(watch.textContent).toContain('or not at all')
-    expect(watch.textContent).toMatch(/98 of 424 big flares/)
-    expect(watch.textContent).not.toMatch(/danger|safe|will come|is coming/i)
+    expect(screen.getByRole('img', { name: 'Day 1 of 3' })).toBeTruthy()
+    const flare = watch.querySelector('.flaresun')!
+    expect(flare.getAttribute('aria-label')).toContain('Size 2 of 3')
+    expect(flare.getAttribute('aria-label')).toContain('A gas cloud leaves the Sun')
+    expect(watch.querySelector('.flaresun svg polygon')).not.toBeNull() // the burst
+    expect(watch.querySelectorAll('.flaresun svg circle').length).toBeGreaterThan(4) // disc, glow, pulses and the cloud blob
+    expect(watch.querySelectorAll('.guess button')).toHaveLength(3)
+    const words = (watch.textContent ?? '').trim().split(/\s+/).filter(Boolean)
+    expect(words.length).toBeLessThanOrEqual(3)
+    expect(watch.textContent).not.toMatch(/danger|safe|will come|is coming|cloud:|98 of 424/i)
     expect(watch.querySelector('a')?.getAttribute('href')).toMatch(/ccmc\.gsfc\.nasa\.gov\/DONKI\/view\/FLR\//)
+    expect(watch.querySelector('a')?.getAttribute('aria-label')).toBe('NASA record')
   })
 
-  it('Cadet shows size and gas cloud; Commander adds which side of the Sun', () => {
+  it('a flare with no gas cloud is drawn without the cloud blob; words appear only on tap', () => {
+    const g = { ...watchedGame(), flares: [{ flareId: 'flr-29334', day: 2, stormIndex: null }], flareSeen: [true], flareResolved: [false], guesses: [null], storms: [] }
+    show(g)
+    const flare = screen.getByLabelText('Flare watch').querySelector('.flaresun')!
+    expect(flare.getAttribute('aria-label')).toContain('No gas cloud')
+    expect(flare.querySelectorAll('svg circle').length).toBeLessThan(6)
+    expect(screen.getByLabelText('Flare watch').textContent).not.toContain('X1.7')
+    fireEvent.click(flare)
+    expect(screen.getByLabelText('Flare watch').textContent).toContain('X1.7, no gas cloud')
+  })
+
+  it('Cadet shows size and cloud as pictures; Commander also puts the burst on the east or west side of the Sun', () => {
     show(watchedGame('cadet'))
-    expect(screen.getByLabelText('Flare watch').textContent).not.toMatch(/East side|West side/)
+    expect(screen.getByLabelText('Flare watch').querySelector('.flaresun')!.getAttribute('aria-label')).not.toMatch(/side/)
     cleanup()
     show(watchedGame('commander'))
-    expect(screen.getByLabelText('Flare watch').textContent).toContain('East side')
+    expect(screen.getByLabelText('Flare watch').querySelector('.flaresun')!.getAttribute('aria-label')).toContain('On the east side')
+  })
+
+  it('a guess is picked with a big picture button, sent with the day, and can be left empty', () => {
+    const sent: { guess?: string }[] = []
+    render(<Base game={watchedGame()} sun={null} onShare={(c) => sent.push(c)} onData={() => undefined} onSun={() => undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Next day' }))
+    expect(sent[0]!.guess).toBeUndefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Space rays: yes' }))
+    expect(screen.getByRole('button', { name: 'Space rays: yes' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Next day' }))
+    expect(sent[1]!.guess).toBe('yes')
+  })
+
+  it('a flare you already guessed about shows your guess locked and does not ask again', () => {
+    render(<Base game={{ ...watchedGame(), guesses: ['no'] }} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
+    expect(screen.queryByRole('group', { name: 'Will space rays come?' })).toBeNull()
+    expect(screen.getByLabelText('Your guess')).toBeTruthy()
   })
 
   it('with a flare nobody has seen yet, there is no flare watch', () => {
@@ -63,7 +98,7 @@ describe('the base screen', () => {
 
   it('shows the science goal and how far the crew is', () => {
     show({ ...calmGame(), science: 7 })
-    expect(screen.getByText(/Science: 7 of 28/)).toBeTruthy()
+    expect(screen.getByText(new RegExp(`Science: 7 of ${MODES.cadet.goal}`))).toBeTruthy()
     expect(screen.getByRole('meter', { name: 'Science goal' }).getAttribute('aria-valuenow')).toBe('7')
   })
 
@@ -113,20 +148,44 @@ describe('the day report: flare news and results', () => {
     return days
   }
 
-  it('the morning after a flare, the report says a real flare showed up in the Sun Watch', () => {
+  it('the morning after a flare, the report shows the new flare drawn on the Sun', () => {
     const day = wholeMission(5).find((g) => g.history[g.history.length - 1]!.reported.length > 0)!
     render(<Report game={day} onNext={() => undefined} />)
-    expect(screen.getByLabelText('Flare news').textContent).toMatch(/New in the Sun Watch: a real [XM]\d/)
-    expect(screen.getByLabelText('Flare news').textContent).toMatch(/gas cloud/i)
+    const news = screen.getByLabelText('Flare news')
+    expect(news.querySelector('.flaresun')!.getAttribute('aria-label')).toMatch(/^A flare\. Size \d of 3/)
+    expect((news.textContent ?? '').trim()).toBe('')
   })
 
-  it('when a watch ends, the report says what really happened, with the NASA record', () => {
+  it('when a watch ends, the reveal shows your guess next to the NASA record, as pictures, with the NASA link', () => {
     const day = wholeMission(5).find((g) => g.history[g.history.length - 1]!.resolved.length > 0)
     expect(day).toBeDefined()
     render(<Report game={day!} onNext={() => undefined} />)
     const news = screen.getByLabelText('Flare news')
-    expect(news.textContent).toMatch(/did (not )?bring space rays/)
+    const reveal = news.querySelector('.reveal')!
+    expect(reveal.getAttribute('aria-label')).toMatch(/NASA's record: (rays came|no rays)/)
     expect(news.querySelector('a')?.getAttribute('href')).toMatch(/ccmc\.gsfc\.nasa\.gov\/DONKI\/view\/(FLR|SEP)\//)
+    expect((news.textContent ?? '').replace(/\s+/g, '').length).toBeLessThanOrEqual(3)
+  })
+
+  it('a good guess shows a check and the science it earned; a wrong guess or "not sure" shows no reward', () => {
+    const guessing = (seed: number, guess: 'yes' | 'no' | 'unsure') => {
+      let g = newGame({ mode: 'cadet', siteId: 'region-3', seed })
+      const r = makeRng(1)
+      while (g.status === 'playing') {
+        g = step(g, { jobs: { air: 2, shield: 3, plants: 0, radio: 0 }, go: false, guess }, r)
+        if (g.history[g.history.length - 1]!.resolved.some((x) => x.followed)) return g
+      }
+      return g
+    }
+    const rightGame = guessing(5, 'yes')
+    render(<Report game={rightGame} onNext={() => undefined} />)
+    const right = screen.getByLabelText('Flare news').querySelector('.reveal')!
+    expect(right.getAttribute('aria-label')).toContain('Good read, plus 2 science')
+    expect(screen.getByLabelText('Flare news').textContent).toContain('+2')
+    cleanup()
+    const unsure = guessing(5, 'unsure')
+    render(<Report game={unsure} onNext={() => undefined} />)
+    expect(screen.getByLabelText('Flare news').querySelector('.reveal')!.getAttribute('aria-label')).not.toContain('plus')
   })
 
   it('a walk that a storm cut short says so, and the science was lost', () => {

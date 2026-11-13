@@ -4,7 +4,7 @@ import { flareClues } from './flares'
 import { riskInHand } from './hand'
 import { activeStorm, activeWatches, currentCard, newGame, radioAvailable, step, type ActiveWatch, type NewGameOptions } from './game'
 import { makeRng } from './rng'
-import type { Choice, GameState, Jobs, Option, Walk } from './types'
+import type { Choice, GameState, Guess, Jobs, Option, Walk } from './types'
 
 export type Bot = (s: GameState) => Choice
 
@@ -79,7 +79,11 @@ function careful(read: RiskReader, opts: { walks?: 'smart' | 'always' | 'never';
     const plants = Math.min(optional, wantPlants)
     const card = currentCard(s)
     const go = card ? optionScore(card.a, s) > optionScore(card.b, s) : false
-    return { jobs: J(air, shield, plants, radio), go, walk }
+    // Guess about the newest flare nobody has guessed yet: say yes or no when the clues lean, otherwise "not sure".
+    const open = watches.filter((w) => s.guesses[w.index] == null).pop()
+    const p = open ? read(open) : 0.5
+    const guess: Guess | undefined = open ? (p >= 0.6 ? 'yes' : p <= 0.35 ? 'no' : 'unsure') : undefined
+    return { jobs: J(air, shield, plants, radio), go, walk, ...(guess ? { guess } : {}) }
   }
 }
 

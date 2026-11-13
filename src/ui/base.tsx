@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, Cloud, CloudOff, Compass, Database, Footprints, Globe, Minus, Moon, Plus, Radiation, Radio, Shield, Sprout, Sun, Wind, Zap, type LucideIcon } from 'lucide-react'
+import { ArrowDown, ArrowUp, BadgeCheck, Database, Footprints, Globe, Minus, Moon, Plus, Radiation, Radio, Shield, Sprout, Sun, Wind, Zap, type LucideIcon } from 'lucide-react'
 import { BLOCKS, POWER_PER_BLOCK, RADIO_SCIENCE, SHIELD_EXTRA_POWER, SHIELD_LEAK, SHIELD_MAX, WALKS } from '../engine/constants'
-import { FLARE_TOTAL } from '../engine/flares'
 import { activeWatch, activeStorm, currentCard, radioAvailable, step, type ActiveWatch } from '../engine/game'
 import { makeRng } from '../engine/rng'
-import type { Choice, GameState, Jobs, Meters, Mode, Walk } from '../engine/types'
+import type { Choice, GameState, Guess, Jobs, Meters, Mode, Walk } from '../engine/types'
 import type { SunView } from '../live/sun'
 import { BaseScene, CrewFace, CrewStrip, OrbiFace } from './art'
 import { crewMoods, HIGH_RADIATION, LOW, sceneState } from './look'
+import { FlareSun, GuessIcon, GuessPicker, WatchDots } from './pictos'
 import { sfx } from './sfx'
 import { Speak } from './speech'
-import { SunChip, when } from './sunscreens'
+import { SunChip } from './sunscreens'
 
 export const METERS: { key: keyof Meters; label: string; Icon: LucideIcon; color: string }[] = [
   { key: 'air', label: 'Air', Icon: Wind, color: 'var(--air)' },
@@ -83,41 +83,40 @@ const JOB_ROWS: { key: keyof Jobs; label: string; hint: string; Icon: LucideIcon
   { key: 'radio', label: 'Radio', hint: 'Send data to Earth', Icon: Radio, color: 'var(--radio)' },
 ]
 
-/** A real flare from NASA's list, with the clues a child can read: size, gas cloud, and (in Commander) which side of the Sun. */
-export function FlareWatch({ w, mode }: { w: ActiveWatch; mode: Mode }) {
+/**
+ * A real flare from NASA's list, drawn on the Sun: size = burst and pulses, gas cloud = a blob leaving the Sun, side = where the
+ * burst sits (Commander). Three dots show which day of the 3-day watch it is. The guess is three big picture buttons.
+ * Words appear only on tap. Nothing here says whether space rays will come.
+ */
+export function FlareWatch({ w, mode, guess, locked, onGuess }: { w: ActiveWatch; mode: Mode; guess: Guess | null; locked: Guess | null; onGuess: (g: Guess) => void }) {
   const r = w.record
-  const text = `Flare watch, day ${w.daysSince} of 3. A real ${r.class} flare on ${when(r.peakTime)}. ${r.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Space rays may come in the next days, or not at all.`
+  const text = `Flare watch, day ${w.daysSince} of 3. A real ${r.class} flare. ${r.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Will space rays come?`
+  const shown = locked ?? guess
   return (
     <section className="watch" aria-label="Flare watch" role="alert">
       <div className="row between">
         <span className="row">
-          <Radiation size={24} color="var(--radiation)" className="icon" aria-hidden="true" />
-          <b>Flare watch: day {w.daysSince} of 3</b>
+          <Radiation size={26} color="var(--radiation)" className="icon" aria-hidden="true" />
+          <WatchDots day={w.daysSince} />
         </span>
-        <Speak text={text} />
+        <span className="row">
+          <Speak text={text} />
+          <a className="iconlink" href={r.link} target="_blank" rel="noreferrer" aria-label="NASA record">
+            <BadgeCheck size={22} aria-hidden="true" />
+          </a>
+        </span>
       </div>
-      <p>
-        A real flare from NASA’s list: <b>{r.class}</b> on {when(r.peakTime)}.
-      </p>
-      <div className="chips">
-        <span className="chip">
-          <Zap size={16} aria-hidden="true" />
-          Size {r.class}
-        </span>
-        <span className="chip">
-          {r.cloud ? <Cloud size={16} aria-hidden="true" /> : <CloudOff size={16} aria-hidden="true" />}
-          {r.cloud ? 'Gas cloud: yes' : 'Gas cloud: no'}
-        </span>
-        {mode === 'commander' && (
-          <span className="chip">
-            <Compass size={16} aria-hidden="true" />
-            {r.side === 'west' ? 'West side' : 'East side'}
+      <FlareSun flare={r} showSide={mode === 'commander'} />
+      <div className="row between">
+        <b>Rays?</b>
+        {locked ? (
+          <span className="guess locked" aria-label="Your guess">
+            <GuessIcon guess={locked} size={40} />
           </span>
+        ) : (
+          <GuessPicker value={shown} onPick={onGuess} />
         )}
       </div>
-      <p className="muted">
-        Space rays may come in 1 to 3 days, or not at all. Over the years, {FLARE_TOTAL.followed} of {FLARE_TOTAL.n} big flares were followed by space rays. <a href={r.link} target="_blank" rel="noreferrer">NASA record</a>
-      </p>
     </section>
   )
 }
@@ -126,6 +125,7 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
   const [jobs, setJobs] = useState<Jobs>({ air: 0, shield: 0, plants: 0, radio: 0 })
   const [walk, setWalk] = useState<Walk>('none')
   const [go, setGo] = useState(false)
+  const [guess, setGuess] = useState<Guess | null>(null)
   const card = currentCard(game)
   const watch = activeWatch(game)
   const storm = activeStorm(game)
@@ -147,6 +147,8 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
     { key: 'short', label: 'Short walk', hint: `${WALKS.short.blocks} block, +${WALKS.short.science} science` },
     { key: 'long', label: 'Long walk', hint: `${WALKS.long.blocks} blocks, +${WALKS.long.science} science` },
   ]
+  // A flare you already guessed about keeps its guess (shown locked); otherwise today's pick is sent with the day.
+  const locked = watch ? (game.guesses[watch.index] ?? null) : null
   const goalPct = Math.min(100, Math.round((100 * game.science) / game.goal))
 
   return (
@@ -194,7 +196,7 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
           <span>The storm is still here. Keep the shield charged and stay home.</span>
         </div>
       )}
-      {watch && !storm && <FlareWatch w={watch} mode={game.mode} />}
+      {watch && !storm && <FlareWatch w={watch} mode={game.mode} guess={guess} locked={locked} onGuess={setGuess} />}
 
       {game.day === 1 && (
         <div className="orbi">
@@ -290,7 +292,7 @@ export function Base({ game, sun, onShare, onData, onSun }: { game: GameState; s
       )}
 
       <div className="sticky-cta">
-        <button className="primary" onClick={() => onShare({ jobs, go: card !== null && go, walk })}>
+        <button className="primary" onClick={() => onShare({ jobs, go: card !== null && go, walk, ...(guess && !locked ? { guess } : {}) })}>
           Next day
         </button>
       </div>

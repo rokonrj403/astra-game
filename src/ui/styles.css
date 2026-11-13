@@ -2083,7 +2083,7 @@ html.calm *::after {
   left: 22%;
   top: -22px;
 }
-.sheet-scrim {
+.gear-scrim {
   position: fixed;
   inset: 0;
   z-index: 30;
@@ -2093,7 +2093,7 @@ html.calm *::after {
   justify-content: flex-end;
   padding: 60px 12px 0;
 }
-.sheet {
+.gear-sheet {
   position: relative;
   background: #17264a;
   border: 2px solid var(--line);
@@ -2101,13 +2101,13 @@ html.calm *::after {
   padding: 14px;
   width: min(100%, 300px);
 }
-.sheet-close {
+.gear-close {
   position: absolute;
   top: -22px;
   right: 6px;
   background: #17264a;
 }
-.sheet-grid {
+.gear-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
@@ -2194,12 +2194,12 @@ body:has(.attract) .twin {
   width: 30px;
   height: 30px;
 }
-.sheet-top {
+.gear-top {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 8px;
 }
-.sheet-close {
+.gear-close {
   position: static;
   top: auto;
   right: auto;
@@ -2210,4 +2210,28 @@ body:has(.attract) .twin {
 /* While the camera moves into the base, the loop's own animations rest, so the zoom is the only thing moving. */
 .attract.leaving .attract-scene {
   will-change: transform;
+}
+
+/* Reveal card: three columns that shrink to fit the row (no spill past the card), and the End title clear of the cue chip. */
+.row.between {
+  gap: 8px;
+  min-width: 0;
+}
+.reveal2 {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.reveal2 .tile {
+  min-width: 0;
+}
+.reveal2 .verdict {
+  min-width: 36px;
+}
+.reveal2 .tile small {
+  font-size: 0.875rem;
+}
+.app.end > h2 {
+  padding-left: 124px;
+  text-align: left;
+  font-size: 1.5rem;
 }

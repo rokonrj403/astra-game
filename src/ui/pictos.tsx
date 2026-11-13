@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CloudRain, CircleHelp, Minus, Star, Sun, X } from 'lucide-react'
+import { Check, CircleSlash, CloudRain, CircleHelp, Minus, Star, Sun, X } from 'lucide-react'
 import { flareBucket, type FlareRecord } from '../engine/flares'
 import type { Guess } from '../engine/types'
 
@@ -127,8 +127,8 @@ export function GuessReveal({ guess, followed, reward }: { guess: Guess | null; 
   // Two big pictures side by side: what the child said, and what the Sun did. Between them a green tick, an orange cross, or a dash if they were not sure.
   return (
     <span className="reveal reveal2" role="img" aria-label={words}>
-      <span className="tile">
-        {guess ? <GuessIcon guess={guess} size={52} /> : <span className="noguess big" />}
+      <span className="tile" data-guess={guess ?? 'none'}>
+        {guess ? <GuessIcon guess={guess} size={48} /> : <CircleSlash size={48} color="var(--muted)" aria-hidden="true" />}
         <small>You said</small>
       </span>
       <span className="verdict" aria-hidden="true">
@@ -139,8 +139,8 @@ export function GuessReveal({ guess, followed, reward }: { guess: Guess | null; 
           </b>
         )}
       </span>
-      <span className="tile">
-        <GuessIcon guess={followed ? 'yes' : 'no'} size={52} />
+      <span className="tile" data-guess={followed ? 'yes' : 'no'}>
+        <GuessIcon guess={followed ? 'yes' : 'no'} size={48} />
         <small>Sun did</small>
       </span>
     </span>

@@ -110,6 +110,23 @@ async function audit(page: Page, name: string) {
       }
       if (el.matches('button, summary') && (b.height < 44 || b.width < 44)) out.push(`tap target too small (${Math.round(b.width)}x${Math.round(b.height)}): ${label}`)
     }
+    // The picture cue chip (it shows when a sound plays) must never sit on a title or the day number.
+    const chip = document.querySelector('.twin')?.getBoundingClientRect()
+    if (chip) {
+      for (const h of document.querySelectorAll('h1, h2, .daynum')) {
+        const r = document.createRange()
+        r.selectNodeContents(h)
+        for (const q of r.getClientRects()) if (q.width > 0 && q.left < chip.right && q.right > chip.left && q.top < chip.bottom && q.bottom > chip.top) out.push(`cue chip covers the title "${(h.textContent ?? '').trim()}"`)
+      }
+    }
+    // The You said / Sun did card and its NASA link stay inside their card.
+    for (const card of document.querySelectorAll('section.card')) {
+      const c = card.getBoundingClientRect()
+      for (const el of card.querySelectorAll('.reveal2, .reveal2 .tile, a.iconlink')) {
+        const b = el.getBoundingClientRect()
+        if (b.right > c.right + 0.5) out.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} spills past its card (${Math.round(b.right)} > ${Math.round(c.right)})`)
+      }
+    }
     return out
   }, W)
   expect(issues, `${name}: ${issues.join(' | ')}`).toEqual([])
@@ -281,7 +298,23 @@ test(`a full ${mode} mission: every day, storm, radio call, why, end and card sc
     }
   }
   expect(days, `${mode} days played`).toBeGreaterThanOrEqual(mode === 'Commander' ? 10 : 5)
+  await page.locator('.twin').waitFor({ timeout: 1500 }).catch(() => undefined) // the cue chip for the ending sound, so the overlap check below has something to check
   await audit(page, `13-end${sfx}`)
+  // The win title is wider than "Rescue ship": with it in place, the title still starts to the right of the cue chip (left 76 px, 44 px wide) and stays on the phone.
+  const win = await page.evaluate(() => {
+    const h = document.querySelector('main.end h2') as HTMLElement
+    const keep = h.textContent
+    h.textContent = 'Mission complete'
+    const r = document.createRange()
+    r.selectNodeContents(h)
+    const q = r.getBoundingClientRect()
+    const lines = new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size
+    h.textContent = keep
+    return { left: q.left, right: q.right, lines }
+  })
+  expect(win.left, 'win title starts right of the cue chip').toBeGreaterThanOrEqual(120)
+  expect(win.right, 'win title stays on the phone').toBeLessThanOrEqual(W)
+  expect(win.lines, 'win title is one line').toBe(1)
   expect(seen.has('storm'), 'a real storm should have reached the base').toBe(true)
   await page.getByRole('button', { name: 'Play again' }).click()
   await page.getByRole('button', { name: 'More' }).click()

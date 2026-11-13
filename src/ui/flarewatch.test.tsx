@@ -104,7 +104,7 @@ describe('the day report: flare news and results', () => {
     const reveal = news.querySelector('.reveal')!
     expect(reveal.getAttribute('aria-label')).toMatch(/NASA's record: (rays came|no rays)/)
     expect(news.querySelector('a')?.getAttribute('href')).toMatch(/ccmc\.gsfc\.nasa\.gov\/DONKI\/view\/(FLR|SEP)\//)
-    expect((news.textContent ?? '').replace(/\s+/g, '').length).toBeLessThanOrEqual(3)
+    expect((news.textContent ?? '').trim().split(/\s+/).length).toBeLessThanOrEqual(5) // "You said", "Sun did" and a +2
   })
 
   it('a good guess shows a check and the science it earned; a wrong guess or "not sure" shows no reward', () => {

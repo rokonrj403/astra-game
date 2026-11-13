@@ -308,7 +308,6 @@ function FlareNews({ r, game }: { r: DayRecord; game: GameState }) {
         if (!f) return null
         return (
           <div key={`res-${flareId}`} className="row between" role="group" aria-label="What really happened">
-            <FlareSun flare={f} showSide={side} width={100} />
             <GuessReveal guess={guess} followed={followed} reward={reward} />
             <a className="iconlink" href={followed && f.sep ? f.sep.link : f.link} target="_blank" rel="noreferrer" aria-label="NASA record">
               <BadgeCheck size={24} aria-hidden="true" />
@@ -350,7 +349,7 @@ export function DaySummary({ game }: { game: GameState }) {
       <FlareNews r={r} game={game} />
       {r.radioWorked && <RadioCall r={r} />}
 
-      <ul className="summary" aria-label="What changed">
+      <ul className="summary chipsrow" aria-label="What changed">
         {rows.map(({ key, Icon, color, a, b, line }) => (
           <li key={key} aria-label={line}>
             <Icon size={34} color={color} aria-hidden="true" />

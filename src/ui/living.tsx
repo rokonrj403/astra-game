@@ -148,15 +148,6 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
     (watch ? ` A real ${watch.record.class} flare. ${watch.record.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Will space rays come?` : '') +
     (card ? ` ${card.question} One: ${card.a.label}. Two: ${card.b.label}.` : '')
 
-  const shownDay = phase === 'summary' ? (game.history[game.history.length - 1]?.day ?? game.day) : game.day
-  const dayOnly = (
-    <div className="livetop">
-      <b className="daynum" aria-label={`Day ${shownDay} of ${game.totalDays}`}>
-        {shownDay}/{game.totalDays}
-      </b>
-    </div>
-  )
-
   const header = (
     <div className="livetop">
       <b className="daynum" aria-label={`Day ${game.day} of ${game.totalDays}`}>
@@ -202,10 +193,8 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
     const flare: FlareView | null = done ? { size: flareSize(done.class), cloud: done.cloud, side: done.side === 'west' ? 'west' : 'east', daysSince: 3 } : null
     const side = game.mode === 'commander' && done ? (done.side === 'west' ? 'west' : 'east') : null
     return (
-      <main className="app living">
-        {dayOnly}
+      <main className="app living summaryview">
         <MoonBaseScene model={{ ...sceneModelFromGame(game, {}), flare: flare ?? sceneModelFromGame(game, {}).flare }} reveal={revealFromRecord(last, side)} calm={calm} />
-        <MeterStrip values={meters(game)} hasFood={game.hasFood} science={{ value: game.science, goal: game.goal }} />
         <div className="sheet">
           <DaySummary game={game} />
           <NextButton game={game} onNext={finishDay} />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BadgeCheck, Check, CloudRain, CircleHelp, Sun, X } from 'lucide-react'
+import { Check, CloudRain, CircleHelp, Minus, Star, Sun, X } from 'lucide-react'
 import { flareBucket, type FlareRecord } from '../engine/flares'
 import type { Guess } from '../engine/types'
 
@@ -124,15 +124,25 @@ export function GuessPicker({ value, onPick }: { value: Guess | null; onPick: (g
 export function GuessReveal({ guess, followed, reward }: { guess: Guess | null; followed: boolean; reward: number }) {
   const right = (guess === 'yes' && followed) || (guess === 'no' && !followed)
   const words = `${guess ? `You guessed: ${GUESS_LABEL[guess]}.` : 'No guess.'} NASA's record: ${followed ? 'rays came' : 'no rays'}.${reward > 0 ? ` Good read, plus ${reward} science.` : ''}`
+  // Two big pictures side by side: what the child said, and what the Sun did. Between them a green tick, an orange cross, or a dash if they were not sure.
   return (
-    <span className="reveal" role="img" aria-label={words}>
-      {guess ? <GuessIcon guess={guess} size={30} /> : <span className="noguess" />}
-      {guess && guess !== 'unsure' ? right ? <Check size={22} color="var(--plants)" aria-hidden="true" /> : <X size={22} color="var(--muted)" aria-hidden="true" /> : null}
-      <span className="nasa">
-        <BadgeCheck size={20} aria-hidden="true" />
-        <GuessIcon guess={followed ? 'yes' : 'no'} size={30} />
+    <span className="reveal reveal2" role="img" aria-label={words}>
+      <span className="tile">
+        {guess ? <GuessIcon guess={guess} size={52} /> : <span className="noguess big" />}
+        <small>You said</small>
       </span>
-      {reward > 0 && <b className="plus">+{reward}</b>}
+      <span className="verdict" aria-hidden="true">
+        {guess && guess !== 'unsure' ? right ? <Check size={44} color="var(--plants)" strokeWidth={4} /> : <X size={44} color="var(--radiation)" strokeWidth={4} /> : <Minus size={34} color="var(--muted)" />}
+        {reward > 0 && (
+          <b className="plus">
+            <Star size={16} fill="var(--sun)" color="var(--sun)" />+{reward}
+          </b>
+        )}
+      </span>
+      <span className="tile">
+        <GuessIcon guess={followed ? 'yes' : 'no'} size={52} />
+        <small>Sun did</small>
+      </span>
     </span>
   )
 }

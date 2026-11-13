@@ -1784,3 +1784,96 @@ html.calm *::after {
 .optbtn .fx {
   gap: 4px;
 }
+
+/* Day summary inside the living screen: the scene on top (smaller), then one compact sheet, all above Next within 740 px. */
+.summaryview {
+  gap: 6px;
+  height: 100dvh;
+  min-height: 0;
+}
+/* The scene takes what the sheet leaves: full size on a quiet day, smaller on a storm day, never scrolling. */
+.summaryview .sc-root {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: auto;
+}
+.summaryview .sheet {
+  gap: 6px;
+}
+.summaryview .daysummary {
+  display: grid;
+  gap: 6px;
+}
+.summaryview .daysummary h2 {
+  font-size: 1.3rem;
+}
+.summaryview .stormcard {
+  padding: 6px 10px;
+}
+.summaryview .card.stack {
+  padding: 8px;
+  gap: 6px;
+}
+.chipsrow {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 8px;
+}
+.chipsrow li {
+  padding: 6px 10px;
+  gap: 4px;
+  border-radius: 999px;
+}
+.chipsrow li svg:first-child {
+  width: 26px;
+  height: 26px;
+}
+.chipsrow li svg:last-child {
+  width: 22px;
+  height: 22px;
+}
+.reveal2 {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.reveal2 .tile {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  background: #1b2a4d;
+  border-radius: 16px;
+  padding: 8px 4px 4px;
+}
+.reveal2 .tile small {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.reveal2 .verdict {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-width: 52px;
+}
+.reveal2 .verdict .plus {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.noguess.big {
+  width: 52px;
+  height: 52px;
+}
+/* The picture cue chip sits at the top, beside the day number, where it never covers the play area or a button. */
+.twin {
+  bottom: auto;
+  right: auto;
+  top: 8px;
+  left: 76px;
+  width: 44px;
+  height: 44px;
+}

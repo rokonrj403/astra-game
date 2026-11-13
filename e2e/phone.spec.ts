@@ -207,6 +207,9 @@ test('a full day, the storm, radio call, why-it-happened, end and card screens f
       await page.getByRole('button', { name: 'See my mission' }).click()
     } else if (await page.locator('.daysummary').isVisible()) {
       // The summary after a day. Audit the first one that shows a real storm and the first that shows a radio call.
+      // EVERY summary, storm days and reveal days included, fits the phone: no scrolling, Next on screen.
+      const h = await page.evaluate(() => document.documentElement.scrollHeight)
+      expect(h, 'a day summary is taller than the 740 px phone').toBeLessThanOrEqual(740)
       if ((await page.getByLabel('Real storm').count()) > 0 && !seen.has('storm')) {
         seen.add('storm')
         await audit(page, '10-report-storm')

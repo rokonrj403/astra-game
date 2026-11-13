@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 
+let calmOn = false
+/** Calm (a switch in Settings) works like the phone's reduce-motion setting: this flag, plus a class on the page that stops all CSS motion. */
+export function setCalm(on: boolean): void {
+  calmOn = on
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle('calm', on)
+}
 export function prefersReducedMotion(): boolean {
-  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  return calmOn || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 }
 
 /** A number that counts from one value to another. With reduced motion (or no animation frames) it shows the final value at once. */

@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { App } from './App'
-import { Base } from './base'
+import { Living } from './living'
 import { Report } from './screens'
-import { MODES } from '../engine/constants'
 import { newGame, step } from '../engine/game'
 import { makeRng } from '../engine/rng'
-import type { GameState } from '../engine/types'
+import type { Choice, GameState } from '../engine/types'
 
 afterEach(() => {
   cleanup()
@@ -26,113 +25,54 @@ const watchedGame = (mode: 'cadet' | 'commander' = 'cadet', today = false): Game
   guesses: [null],
 })
 
-const show = (g: GameState) => render(<Base game={g} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
 
-describe('the base screen', () => {
-  it('draws the real flare on the Sun with picture clues, three guess buttons, and almost no words', () => {
-    show(watchedGame())
-    const watch = screen.getByLabelText('Flare watch')
-    expect(screen.getByRole('img', { name: 'Day 1 of 3' })).toBeTruthy()
-    const flare = watch.querySelector('.flaresun')!
-    expect(flare.getAttribute('aria-label')).toContain('Size 2 of 3')
-    expect(flare.getAttribute('aria-label')).toContain('A gas cloud leaves the Sun')
-    expect(watch.querySelector('.flaresun svg polygon')).not.toBeNull() // the burst
-    expect(watch.querySelectorAll('.flaresun svg circle').length).toBeGreaterThan(4) // disc, glow, pulses and the cloud blob
-    expect(watch.querySelectorAll('.guess button')).toHaveLength(3)
-    const words = (watch.textContent ?? '').trim().split(/\s+/).filter(Boolean)
-    expect(words.length).toBeLessThanOrEqual(3)
-    expect(watch.textContent).not.toMatch(/danger|safe|will come|is coming|cloud:|98 of 424/i)
-    expect(watch.querySelector('a')?.getAttribute('href')).toMatch(/ccmc\.gsfc\.nasa\.gov\/DONKI\/view\/FLR\//)
-    expect(watch.querySelector('a')?.getAttribute('aria-label')).toBe('NASA record')
-  })
+describe('the living screen: the guess', () => {
+  const live = (g: GameState, onStep: (c: Choice) => GameState = () => g) => render(<Living game={g} sun={null} onStep={onStep} onOver={() => undefined} onData={() => undefined} onSun={() => undefined} />)
 
-  it('a flare with no gas cloud is drawn without the cloud blob; words appear only on tap', () => {
-    const g = { ...watchedGame(), flares: [{ flareId: 'flr-29334', day: 2, stormIndex: null }], flareSeen: [true], flareResolved: [false], guesses: [null], storms: [] }
-    show(g)
-    const flare = screen.getByLabelText('Flare watch').querySelector('.flaresun')!
-    expect(flare.getAttribute('aria-label')).toContain('No gas cloud')
-    expect(flare.querySelectorAll('svg circle').length).toBeLessThan(6)
-    expect(screen.getByLabelText('Flare watch').textContent).not.toContain('X1.7')
-    fireEvent.click(flare)
-    expect(screen.getByLabelText('Flare watch').textContent).toContain('X1.7, no gas cloud')
-  })
-
-  it('Cadet shows size and cloud as pictures; Commander also puts the burst on the east or west side of the Sun', () => {
-    show(watchedGame('cadet'))
-    expect(screen.getByLabelText('Flare watch').querySelector('.flaresun')!.getAttribute('aria-label')).not.toMatch(/side/)
-    cleanup()
-    show(watchedGame('commander'))
-    expect(screen.getByLabelText('Flare watch').querySelector('.flaresun')!.getAttribute('aria-label')).toContain('On the east side')
-  })
-
-  it('a guess is picked with a big picture button, sent with the day, and can be left empty', () => {
-    const sent: { guess?: string }[] = []
-    render(<Base game={watchedGame()} sun={null} onShare={(c) => sent.push(c)} onData={() => undefined} onSun={() => undefined} />)
+  it('a guess left empty is not sent', () => {
+    const sent: Choice[] = []
+    const g = watchedGame()
+    live(g, (c) => {
+      sent.push(c)
+      return g
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Next day' }))
     expect(sent[0]!.guess).toBeUndefined()
-    fireEvent.click(screen.getByRole('button', { name: 'Space rays: yes' }))
-    expect(screen.getByRole('button', { name: 'Space rays: yes' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('a guess is picked with a big picture button and sent with the day', () => {
+    const sent: Choice[] = []
+    const g = watchedGame()
+    live(g, (c) => {
+      sent.push(c)
+      return g
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Space rays' }))
+    expect(screen.queryByRole('group', { name: 'ORBI asks' })).toBeNull() // answered: the question goes away
     fireEvent.click(screen.getByRole('button', { name: 'Next day' }))
-    expect(sent[1]!.guess).toBe('yes')
+    expect(sent[0]!.guess).toBe('yes')
   })
 
-  it('a flare you already guessed about shows your guess locked and does not ask again', () => {
-    render(<Base game={{ ...watchedGame(), guesses: ['no'] }} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
-    expect(screen.queryByRole('group', { name: 'Will space rays come?' })).toBeNull()
-    expect(screen.getByLabelText('Your guess')).toBeTruthy()
+  it('three picture buttons, each at least 64 px, and no words on them', () => {
+    live(watchedGame())
+    const ask = screen.getByRole('group', { name: 'ORBI asks' })
+    expect(ask.querySelectorAll('button')).toHaveLength(3)
+    expect((ask.textContent ?? '').trim()).toBe('')
   })
 
-  it('with a flare nobody has seen yet, there is no flare watch', () => {
-    show({ ...watchedGame(), flareSeen: [false] })
-    expect(screen.queryByLabelText('Flare watch')).toBeNull()
+  it('a flare you already guessed about does not ask again', () => {
+    live({ ...watchedGame(), guesses: ['no'] })
+    expect(screen.queryByRole('group', { name: 'ORBI asks' })).toBeNull()
   })
 
-  it('the forecast arrows never change because a storm is hidden for today', () => {
-    show(watchedGame('cadet', false))
-    const quiet = screen.getAllByLabelText(/^Forecast/).map((e) => e.getAttribute('aria-label'))
-    cleanup()
-    show(watchedGame('cadet', true))
-    const stormy = screen.getAllByLabelText(/^Forecast/).map((e) => e.getAttribute('aria-label'))
-    expect(stormy).toEqual(quiet)
+  it('with a flare nobody has seen yet, ORBI asks nothing', () => {
+    live({ ...watchedGame(), flareSeen: [false] })
+    expect(screen.queryByRole('group', { name: 'ORBI asks' })).toBeNull()
   })
 
-  it('shows the science goal and how far the crew is', () => {
-    show({ ...calmGame(), science: 7 })
-    expect(screen.getByText(new RegExp(`Science: 7 of ${MODES.cadet.goal}`))).toBeTruthy()
+  it('shows the science goal bar and how far the crew is', () => {
+    live({ ...calmGame(), science: 7 })
     expect(screen.getByRole('meter', { name: 'Science goal' }).getAttribute('aria-valuenow')).toBe('7')
-  })
-
-  it('shows the shield as a charge that carries over', () => {
-    show({ ...calmGame(), shield: 3 })
-    expect(screen.getByText(/Charge 3 of 6/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
-    expect(screen.getByText(/Charge 4 of 6/)).toBeTruthy()
-  })
-
-  it('a moonwalk is a bet: its blocks come out of the same 6, and the screen says the shield does not protect walkers', () => {
-    show(calmGame())
-    expect(document.body.textContent).toContain('The shield does not protect walkers')
-    expect(screen.getByRole('button', { name: /Stay home/ }).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(screen.getByRole('button', { name: /Long walk/ }))
-    expect(screen.getByText('4 left')).toBeTruthy()
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
-    expect(screen.getByText('0 left')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: /Stay home/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
-    expect((screen.getByRole('button', { name: /Long walk/ }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: /Short walk/ }) as HTMLButtonElement).disabled).toBe(false)
-  })
-
-  it('the situation card has two real choices with the faces of the crew involved', () => {
-    show(calmGame())
-    const card = screen.getByLabelText('Choice card')
-    expect(card.querySelectorAll('.toggle button')).toHaveLength(2)
-    expect(card.querySelectorAll('img').length).toBeGreaterThan(0)
-  })
-
-  it('on day 1 ORBI says plainly that most real flares bring no rays and that these were picked to be tricky', () => {
-    show(calmGame())
-    expect(document.body.textContent).toContain('In real life most flares bring no rays. We picked tricky ones for your training.')
   })
 })
 

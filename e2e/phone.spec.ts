@@ -28,6 +28,7 @@ const BUDGET: Record<string, number> = {
   '02-place': 12,
   '03-mode': 12,
   '04-base-day1': 12,
+  '04b-tour-dome': 12,
   '05-base-blocks': 12,
   '06-sun-saved': 12,
   '09-play-guess': 12,
@@ -155,8 +156,9 @@ test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async (
   expect(tray && tray.y, 'the power tray is in the lower half (thumb zone)').toBeGreaterThan(370)
 
   await give(page, 'air', 'Air')
+  await audit(page, '04b-tour-dome') // ORBI's paw now points at the dome
   await give(page, 'shield', 'Shield')
-  await audit(page, '05-base-blocks')
+  await audit(page, '05-base-blocks') // and now at Next
 
   await page.getByRole('button', { name: /Today's Sun, SAVED/ }).click()
   await expect(page.locator('[data-status="SAVED"]')).toBeVisible()

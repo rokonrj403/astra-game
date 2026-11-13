@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowRight, ArrowUp, Database, Footprints, Radiation, Sparkles, Sprout, TriangleAlert, Wind, Zap, type LucideIcon } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, Database, Volume2, X, Footprints, Radiation, Sparkles, Sprout, TriangleAlert, Wind, Zap, type LucideIcon } from 'lucide-react'
 import { blockPlaced, cardFlip, dayStart, moonwalk, shieldHum, shieldHumStop } from '../audio'
 import { BLOCKS } from '../engine/constants'
 import { flareById } from '../engine/flares'
 import { activeStorm, activeWatch, currentCard, radioAvailable } from '../engine/game'
 import type { Choice, GameState, Guess, Jobs, Option, Walk } from '../engine/types'
+import { browserStore, readJSON, writeJSON } from '../live/store'
 import type { SunView } from '../live/sun'
 import {
   CrewBubble,
@@ -17,7 +18,9 @@ import {
   PowerTray,
   revealFromRecord,
   sceneModelFromGame,
+  sunPos,
   TimeLapse,
+  zoneCenter,
   ZONES,
   type FlareView,
   type Guess as SceneGuess,
@@ -28,7 +31,8 @@ import { flareCue, lowToday, lowWarning, moodFor, setMood } from './cues'
 import { prefersReducedMotion } from './motion'
 import { DaySummary, NextButton } from './screens'
 import { sfx } from './sfx'
-import { Speak } from './speech'
+import { Paw, TOUR_KEY, type TourStep } from './paw'
+import { canSpeak, Speak, speak } from './speech'
 import { SunChip } from './sunscreens'
 
 type Blocks = Record<Target, number>
@@ -86,6 +90,13 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
   const [go, setGo] = useState<boolean | null>(null)
   const [snap, setSnap] = useState<{ before: GameState; blocks: Blocks; walk: Walk } | null>(null)
   const scene = useRef<SceneHandle>(null)
+  // The first-day tour: ORBI's paw points at the next thing to do, one step at a time. Skippable, and remembered.
+  const [tour, setTour] = useState(() => game.day === 1 && readJSON<boolean>(browserStore(), TOUR_KEY) !== true)
+  const [sunSeen, setSunSeen] = useState(false)
+  const endTour = () => {
+    setTour(false)
+    writeJSON(browserStore(), TOUR_KEY, true)
+  }
   const calm = prefersReducedMotion()
 
   const card = currentCard(game)
@@ -94,6 +105,8 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
   const locked = watch ? (game.guesses[watch.index] ?? null) : null
   const left = BLOCKS - used(blocks)
   const stage = phase === 'play' && watch && locked === null && guess === null ? 'guess' : phase === 'play' && card ? 'card' : 'none'
+
+  const tourStep: TourStep | null = !tour || phase !== 'play' ? null : watch && !sunSeen ? 'sun' : blocks.air === 0 ? 'habitat' : blocks.shield === 0 ? 'dome' : stage === 'guess' ? 'guess' : 'next'
 
   // A new day: the mood of the music, the day sound, today's card turning over, and a warning if a bar is low.
   useEffect(() => {
@@ -133,6 +146,7 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
     const jobs: Jobs = { air: blocks.air, shield: blocks.shield, plants: blocks.plants, radio: blocks.radio }
     const walk: Walk = blocks.walk >= 2 ? 'long' : blocks.walk === 1 ? 'short' : 'none'
     const choice: Choice = { jobs, go: card !== null && go === true, walk, ...(guess && locked === null ? { guess } : {}) }
+    if (tour) endTour()
     setSnap({ before: game, blocks, walk })
     onStep(choice)
     setPhase('lapse')
@@ -154,6 +168,7 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
   // For read-aloud (Settings): the picture's words, spoken. Off by default.
   const aloud =
     `ORBI says: You have ${left} blocks to share.` +
+    (game.day === 1 ? ' In real life most flares bring no rays. We picked tricky ones for your training.' : '') +
     (watch ? ` A real ${watch.record.class} flare. ${watch.record.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Will space rays come?` : '') +
     (card ? ` ${card.question} One: ${card.a.label}. Two: ${card.b.label}.` : '')
 
@@ -172,6 +187,11 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
         {game.day}/{game.totalDays}
       </b>
       <span className="row" style={{ gap: 4 }}>
+        {phase === 'play' && tour && (
+          <button className="iconbtn" onClick={endTour} aria-label="Skip tour" title="Skip tour">
+            <X size={20} aria-hidden="true" />
+          </button>
+        )}
         {phase === 'play' && <Speak text={aloud} />}
         <SunChip sun={sun} onTap={onSun} />
         <button className="iconbtn" onClick={onData} aria-label="Data" title="Where the data comes from">
@@ -229,7 +249,10 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
         blocksLeft={left}
         onAdd={add}
         onRemove={remove}
-        onSunTap={() => setTags((t) => !t)}
+        onSunTap={() => {
+          setTags((t) => !t)
+          setSunSeen(true)
+        }}
         tagsOpen={tags}
         clueTags={tagWords}
       >
@@ -245,6 +268,15 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
             </PictureButton>
           </CrewBubble>
         )}
+        {tourStep === 'sun' && <Paw x={sunPos(game.day, game.totalDays).x + 14} y={sunPos(game.day, game.totalDays).y + 18} />}
+        {tourStep === 'habitat' && <Paw x={zoneCenter('air').x} y={zoneCenter('air').y} />}
+        {tourStep === 'dome' && <Paw x={zoneCenter('shield').x} y={190} />}
+        {tourStep === 'guess' && <Paw x={150} y={385} />}
+        {canSpeak() && (
+          <button className="hear" onClick={() => speak(aloud)} aria-label="Hear ORBI" title="Hear ORBI">
+            <Volume2 size={16} aria-hidden="true" />
+          </button>
+        )}
       </MoonBaseScene>
       <MeterStrip values={meters(game)} hasFood={game.hasFood} science={{ value: game.science, goal: game.goal }} />
       <PowerTray blocks={left} calm={calm} resolve={(x, y) => scene.current?.jobAt(x, y) ?? null} centerOf={(t) => scene.current?.centerOf(t) ?? null} onDrop={add} onHover={setHot} />
@@ -252,6 +284,7 @@ export function Living({ game, sun, onStep, onOver, onData, onSun }: LivingProps
         <button className="primary big" onClick={next} aria-label="Next day">
           <ArrowRight size={26} aria-hidden="true" /> Next
         </button>
+        {tourStep === 'next' && <Paw className="next" />}
       </div>
     </main>
   )

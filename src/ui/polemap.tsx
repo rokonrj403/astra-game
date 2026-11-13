@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Globe, Sun } from 'lucide-react'
+import { Paw } from './paw'
 import sites from '../data/sites.json'
 
 /** One or two words for the map; the full real name is the button's label for screen readers and shows once a place is picked. */
@@ -16,7 +17,7 @@ export const SHORT: Record<string, string> = {
 }
 
 const BOX_W = 340
-const BOX_H = 400
+const BOX_H = 360
 const CX = BOX_W / 2
 const CY = BOX_H / 2 - 4
 const REACH = 160 // pixels from the pole to the farthest region
@@ -118,19 +119,25 @@ export function Landscape({ sun, earth }: { sun: number; earth: number }) {
   )
 }
 
-/** A bar for the pin: a small icon and a fill whose length is the real share. */
-function Mini({ value, color, Icon }: { value: number; color: string; Icon: typeof Sun }) {
-  return (
-    <span className="mini" aria-hidden="true">
-      <Icon size={14} color={color} />
-      <span className="bar">
+/** Two big bars for the picked place: the real sun and Earth shares, as icon plus fill. */
+export function Bars2({ sun, earth }: { sun: number; earth: number }) {
+  const row = (value: number, color: string, Icon: typeof Sun, label: string) => (
+    <span className="mini" role="img" aria-label={`${label}: ${Math.round(value * 100)} percent`}>
+      <Icon size={22} color={color} aria-hidden="true" />
+      <span className="bar" style={{ height: 12 }}>
         <i style={{ width: `${Math.round(value * 100)}%`, background: color }} />
       </span>
     </span>
   )
+  return (
+    <div className="bars2">
+      {row(sun, 'var(--sun)', Sun, 'Sunlight')}
+      {row(earth, 'var(--air)', Globe, 'Earth in view')}
+    </div>
+  )
 }
 
-export function PoleMap({ selected, onSelect }: { selected: string | null; onSelect: (id: string) => void }) {
+export function PoleMap({ selected, onSelect, hint }: { selected: string | null; onSelect: (id: string) => void; hint?: string }) {
   const spots = useMemo(pinSpots, [])
   return (
     <div className="polemap" style={{ aspectRatio: `${BOX_W} / ${BOX_H}` }}>
@@ -147,12 +154,16 @@ export function PoleMap({ selected, onSelect }: { selected: string | null; onSel
             style={{ left: `${((p.x - PIN_W / 2) / BOX_W) * 100}%`, top: `${((p.y - PIN_H / 2) / BOX_H) * 100}%`, width: `${(PIN_W / BOX_W) * 100}%`, height: `${(PIN_H / BOX_H) * 100}%` }}
             onClick={() => onSelect(s.id)}
           >
-            <Mini value={s.sunShare.value} color="var(--sun)" Icon={Sun} />
-            <Mini value={s.earthShare.value} color="var(--air)" Icon={Globe} />
+            <span className="dot" aria-hidden="true" />
             <span className="pinname">{SHORT[s.id]}</span>
+            <span className="tiny" aria-hidden="true">
+              <i style={{ background: 'var(--sun)', opacity: 0.25 + 0.75 * s.sunShare.value }} />
+              <i style={{ background: 'var(--air)', opacity: 0.25 + 0.75 * s.earthShare.value }} />
+            </span>
           </button>
         )
       })}
+      {hint && selected === null && spots[hint] && <Paw left={`${(spots[hint]!.x / BOX_W) * 100}%`} top={`${((spots[hint]!.y - 58) / BOX_H) * 100}%`} className="pin-paw" />}
     </div>
   )
 }

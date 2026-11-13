@@ -11,6 +11,7 @@ import { Journal } from './journal'
 import { Settings, Teachers } from './pages'
 import { setSoundEnabled, sfx } from './sfx'
 import { ChooseMode, ChoosePlace, Complete, Start, Why } from './screens'
+import { setCalm } from './motion'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
 import { TwinHost } from './twin'
@@ -36,6 +37,7 @@ export function App() {
   const [sun, setSun] = useState<SunView | null>(null)
   const [met, setMet] = useState<string[]>(() => readJSON<string[]>(browserStore(), CARDS_KEY) ?? [])
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs)
+  setCalm(prefs.calm === true) // idempotent: a flag and a class on the page, set before the screens read it
   const [journal, setJournal] = useState<JournalEntry[]>(() => readJSON<JournalEntry[]>(browserStore(), JOURNAL_KEY) ?? [])
 
   useEffect(() => {

@@ -11,11 +11,11 @@ import {
   Footprints,
   GraduationCap,
   Flag,
-  Globe,
   House,
   Info,
   Layers,
   Minus,
+  PawPrint,
   Play,
   Radio,
   Rocket,
@@ -34,10 +34,10 @@ import { flareById } from '../engine/flares'
 import type { BadgeId, DayRecord, GameState, Loss, Mode } from '../engine/types'
 import { missionFailedGentle } from '../audio'
 import { BaseScene, OrbiFace } from './art'
-import { METERS } from './base'
+import { METERS } from './meters'
 import { revealCue } from './cues'
 import { Celebrate } from './motion'
-import { Landscape, PoleMap } from './polemap'
+import { Bars2, Landscape, PoleMap } from './polemap'
 import { CloudPanelArt, FlarePanelArt, RanOutArt, RaysPanelArt, SafeArt, ShipArt, type RaysStory } from './whystrip'
 import { MoonBaseScene, sceneModelFromGame, type SceneModel } from '../scene'
 import { prefersReducedMotion } from './motion'
@@ -121,10 +121,11 @@ export function ChoosePlace({ onPick, onBack }: { onPick: (siteId: string) => vo
           NASA’s 9 candidate landing regions near the Moon’s South Pole. Sun and Earth views are for the best spot near each region, from NASA Moon maps.
         </p>
       )}
-      <PoleMap selected={sel} onSelect={setSel} />
+      <PoleMap selected={sel} onSelect={setSel} hint="region-3" />
       <div className="chosen">
         {site ? (
           <>
+            <Bars2 sun={site.sunShare.value} earth={site.earthShare.value} />
             <Landscape sun={site.sunShare.value} earth={site.earthShare.value} />
             <b>{site.name}</b>
             <button className="primary" onClick={() => onPick(site.id)}>
@@ -132,9 +133,9 @@ export function ChoosePlace({ onPick, onBack }: { onPick: (siteId: string) => vo
             </button>
           </>
         ) : (
-          <span className="calm" role="img" aria-label="Tap a place on the map">
-            <Globe size={34} color="var(--air)" aria-hidden="true" />
-            <ArrowUp size={26} aria-hidden="true" />
+          <span className="pointing" role="img" aria-label="Tap a place on the map">
+            <ArrowUp size={30} aria-hidden="true" />
+            <PawPrint size={64} color="var(--sun)" fill="var(--sun)" aria-hidden="true" />
           </span>
         )}
       </div>

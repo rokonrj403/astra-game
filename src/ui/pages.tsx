@@ -29,6 +29,21 @@ export function Settings({ prefs, onChange, onBack }: { prefs: Prefs; onChange: 
         </div>
         <p>Soft clicks, a chime for storm news and a rumble when a storm hits. They are made on your device. Nothing is downloaded.</p>
       </section>
+      <section className="card stack" aria-label="Calm">
+        <div className="row between">
+          <h3 id="calm-label">Calm</h3>
+          <button
+            role="switch"
+            aria-checked={prefs.calm === true}
+            aria-labelledby="calm-label"
+            className={`switch${prefs.calm ? ' on' : ''}`}
+            onClick={() => onChange({ ...prefs, calm: !prefs.calm })}
+          >
+            {prefs.calm ? 'On' : 'Off'}
+          </button>
+        </div>
+        <p>No moving pictures. Changes happen at once. This works like the reduce-motion setting on your phone.</p>
+      </section>
       <section className="card stack" aria-label="Volume">
         <h3 id="vol-label">Volume</h3>
         <input

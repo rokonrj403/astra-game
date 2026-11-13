@@ -1619,3 +1619,126 @@ button:active:not(:disabled) {
   width: 96px;
   height: 96px;
 }
+
+/* ORBI's paw (first-day tour) and tap-ORBI-to-hear. */
+.paw {
+  position: absolute;
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sun);
+  pointer-events: none;
+  animation: paw-pulse 1.3s ease-out infinite;
+}
+.paw.next {
+  left: auto;
+  right: 22px;
+  top: -2px;
+  margin: 0;
+}
+.paw.pin-paw {
+  margin: -24px 0 0 -24px;
+}
+@keyframes paw-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(240, 169, 0, 0.75);
+    transform: scale(1);
+  }
+  60% {
+    box-shadow: 0 0 0 16px rgba(240, 169, 0, 0);
+    transform: scale(1.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 169, 0, 0);
+    transform: scale(1);
+  }
+}
+.living .sticky-cta {
+  position: relative;
+}
+.hear {
+  position: absolute;
+  pointer-events: auto;
+  left: 7.78%;
+  top: 84.1%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  background: none;
+  border: 0;
+  padding: 0;
+  z-index: 4;
+}
+.hear svg {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--sun);
+  color: #0f1a33;
+}
+
+/* Calm: no moving pictures anywhere; state changes happen at once. Same effect as the phone's "reduce motion" setting. */
+html.calm *,
+html.calm *::before,
+html.calm *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Place map v2: small pins (a dot, one name, two tiny dots), not boxes. */
+.place.pin {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 3px;
+  align-items: center;
+}
+.place.pin[aria-pressed='true'] {
+  background: none;
+  box-shadow: none;
+}
+.pin .dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0f1a33;
+  border: 3px solid var(--sun);
+}
+.place.pin[aria-pressed='true'] .dot {
+  background: var(--sun);
+  border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(240, 169, 0, 0.55);
+}
+.pin .pinname {
+  background: rgba(15, 26, 51, 0.88);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.pin .tiny {
+  display: flex;
+  gap: 4px;
+}
+.pin .tiny i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.bars2 {
+  display: grid;
+  gap: 6px;
+}
+.pointing {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  align-self: center;
+}

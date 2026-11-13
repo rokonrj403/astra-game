@@ -8,6 +8,8 @@ export interface Prefs {
   readAloud: boolean
   /** Soft clicks, a storm chime and a rumble, made in code. On by default; a switch in Settings mutes them. */
   sound: boolean
+  /** Calm: no moving pictures; every change happens at once. Same path as the phone's reduce-motion setting. */
+  calm?: boolean
 }
 export const DEFAULT_PREFS: Prefs = { readAloud: false, sound: true }
 const PREFS_KEY = 'astra-prefs-v1'
@@ -16,7 +18,7 @@ export const PrefsContext = createContext<Prefs>(DEFAULT_PREFS)
 
 export function loadPrefs(): Prefs {
   const p = readJSON<Partial<Prefs>>(browserStore(), PREFS_KEY)
-  return { readAloud: p?.readAloud === true, sound: p?.sound !== false }
+  return { readAloud: p?.readAloud === true, sound: p?.sound !== false, calm: p?.calm === true }
 }
 export function savePrefs(p: Prefs): void {
   writeJSON(browserStore(), PREFS_KEY, p)
@@ -31,7 +33,7 @@ export function speak(text: string): void {
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   u.lang = 'en-US'
-  u.rate = 0.95
+  u.rate = 0.9
   // The music gets quieter while a voice reads.
   duckBed(true)
   u.onend = () => duckBed(false)

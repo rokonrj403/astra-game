@@ -79,3 +79,21 @@ export const MODE_CARDS: Record<Mode, { name: string; lines: string[] }> = {
   cadet: { name: 'Cadet', lines: [`${MODES.cadet.days} days`, 'One real storm', `Collect ${MODES.cadet.goal} science`, 'No food bar'] },
   commander: { name: 'Commander', lines: [`${MODES.commander.days} days`, 'Two real storms', 'Stronger storms', `Collect ${MODES.commander.goal} science`, 'Food bar'] },
 }
+
+/**
+ * Training (newGame option `training`): Days 1 and 2 are assisted days. Day 1 teaches with one fixed real flare, and on both days
+ * no meter can pass the line where the crew starts to look worried, so these days cannot be lost. From Day 3 the game is normal.
+ * The lines are the crew-face lines in src/ui/look.ts (LOW and HIGH_RADIATION); a test keeps them equal.
+ */
+export const TRAINING_DAYS = 2
+export const TRAINING_FLOOR = { air: 35, power: 30, food: 35 } as const
+/** The crew is worried at radiation 60 or more, so training holds it just under. */
+export const TRAINING_RADIATION_MAX = 59
+/**
+ * The training flare: NASA DONKI FLR 13010 (https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/13010/-1), class X9.3, peak 2017-09-06T12:02Z,
+ * west side (S07W33), with a gas cloud. A GOES >10 MeV radiation storm began 11.7 hours after its peak (DONKI SEP 2017-09-06T23:45:00-SEP-001).
+ * It is our storm-1, "The September 2017 Super Flares".
+ * Rule: of the flares in flares.json of class M5 or more, with a gas cloud, that a >10 MeV radiation storm followed within 72 hours,
+ * take the biggest. A test re-derives it from the data. The record, its label and its outcome are never changed.
+ */
+export const TRAINING_FLARE_ID = 'flr-13010'

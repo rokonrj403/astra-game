@@ -34,7 +34,10 @@ export interface StormPlan {
  */
 export interface FlareEvent {
   flareId: string
-  /** The day the flare happens. It shows up in the next morning's Sun Watch. */
+  /**
+   * The day the flare happens. It shows up in the next morning's Sun Watch.
+   * In a training game the first flare has day 0: it happened the day before the mission, so it is in the Sun Watch on the morning of Day 1.
+   */
   day: number
   stormIndex: number | null
 }
@@ -92,6 +95,8 @@ export interface DayRecord {
   before: Meters
   after: Meters
   flavour: number
+  /** Training only: the meters that were held at the crew's worried line today (see TRAINING_FLOOR). Absent when none was, and in every normal game. */
+  held?: (keyof Meters)[]
 }
 
 export interface GameState extends Meters {
@@ -120,6 +125,8 @@ export interface GameState extends Meters {
   /** The guess for each flare, or null. Private until the reveal. */
   guesses: (Guess | null)[]
   history: DayRecord[]
+  /** true only in a training game (newGame option `training`): Days 1 and 2 are assisted. Absent in every normal game. */
+  training?: boolean
 }
 
 export interface Option {

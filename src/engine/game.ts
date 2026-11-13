@@ -26,6 +26,10 @@ import {
   START,
   STORM_INTENSITY,
   STORM_SCORE,
+  TRAINING_DAYS,
+  TRAINING_FLARE_ID,
+  TRAINING_FLOOR,
+  TRAINING_RADIATION_MAX,
   WALKS,
   WATCH_DAYS,
 } from './constants'
@@ -42,6 +46,11 @@ export interface NewGameOptions {
   mode: Mode
   siteId: string
   seed: number
+  /**
+   * Training: Day 1 opens with one fixed real flare (TRAINING_FLARE_ID) already in the Sun Watch, and Days 1 and 2 cannot be lost.
+   * Default off. The bots never use it.
+   */
+  training?: boolean
 }
 
 const round2 = (x: number) => Math.round(x * 100) / 100
@@ -72,8 +81,12 @@ interface Planned {
  * flares are real flares NASA's list shows were NOT followed by space rays. The first flare is a big one with no gas cloud and
  * no rays, so "a big flash always means danger" is tested right away. Commander also has a big flare WITH a gas cloud that
  * brought no rays. Flares happen on days Earth is in view, so Commander's radio can send news.
+ *
+ * Training: the first real storm is not drawn, it is the training flare's own real storm (one of the storms a normal game can deal).
+ * That flare happened the day before the mission (day 0), so it is in the Sun Watch on the morning of Day 1 and its rays arrive
+ * after its real delay. The other flares are dealt as usual and happen after the assisted days.
  */
-function planEvents(mode: Mode, earthDays: boolean[], rng: Rng): { storms: StormPlan[]; flares: FlareEvent[] } {
+function planEvents(mode: Mode, earthDays: boolean[], rng: Rng, training = false): { storms: StormPlan[]; flares: FlareEvent[] } {
   const cfg = MODES[mode]
   const known = storms.filter((s) => !s.headline)
   const headline = storms.find((s) => s.headline)
@@ -91,7 +104,9 @@ function planEvents(mode: Mode, earthDays: boolean[], rng: Rng): { storms: Storm
     return { flare: f, stormId: `flare:${f.id}`, size: 'small', profile: stormProfile('small', null), delay: f.sep.delayDays }
   }
   // A balanced hand: half the flares really brought rays, half did not. About half of the rays-flares are one of our 8 real storms.
-  const firstYes = rng() < 0.5 ? real(pick(known, rng)) : other()
+  const dealt = rng() < 0.5 ? real(pick(known, rng)) : other()
+  const lesson = training ? real(known.find((s) => s.id === flareById(TRAINING_FLARE_ID)?.stormId)) : null
+  const firstYes = lesson ?? dealt
   const yes: Planned[] = mode === 'cadet' ? [firstYes] : [firstYes, real(headline)]
 
   const bigNoCloud = FLARES_NOT_FOLLOWED.filter((f) => f.class.startsWith('X') && !f.cloud)
@@ -111,7 +126,7 @@ function planEvents(mode: Mode, earthDays: boolean[], rng: Rng): { storms: Storm
   // Cadet: [misleading big flare, the storm]. Commander: [misleading big flare, storm, cloud flare with no rays, storm, ...].
   const events: Planned[] = []
   const d = decoys.slice()
-  const y = yes.slice()
+  const y = lesson ? yes.slice(1) : yes.slice()
   while (d.length || y.length) {
     const nextDecoy = d.shift()
     if (nextDecoy) events.push(nextDecoy)
@@ -121,12 +136,13 @@ function planEvents(mode: Mode, earthDays: boolean[], rng: Rng): { storms: Storm
 
   // Place them over the mission: one slot each, on Earth-view days, storms kept apart, nothing after the last day.
   const n = events.length
-  const lo = 2
+  const lo = lesson ? TRAINING_DAYS + 1 : 2
   const hi = cfg.days - 2
   const used = new Set<number>()
-  let stormFree = 0
+  let stormFree = lesson ? lesson.delay + lesson.profile.length : 0
   const placed = events.map((p, i) => {
-    const maxDay = p.stormId ? Math.min(hi, cfg.days - 1 - p.delay) : hi
+    // In training a flare with no rays is also placed early enough for its 3-day watch to end inside the mission.
+    const maxDay = p.stormId ? Math.min(hi, cfg.days - 1 - p.delay) : lesson ? Math.min(hi, cfg.days - WATCH_DAYS) : hi
     const minDay = Math.max(lo, p.stormId ? stormFree - p.delay : lo)
     const start = lo + Math.floor((i * (hi - lo + 1)) / n)
     const end = lo + Math.floor(((i + 1) * (hi - lo + 1)) / n) - 1
@@ -141,6 +157,7 @@ function planEvents(mode: Mode, earthDays: boolean[], rng: Rng): { storms: Storm
     if (p.stormId) stormFree = day + p.delay + p.profile.length
     return { p, day }
   })
+  if (lesson) placed.unshift({ p: lesson, day: 0 })
   placed.sort((a, b) => a.day - b.day)
 
   const stormPlans: StormPlan[] = []
@@ -162,8 +179,8 @@ export function newGame(o: NewGameOptions): GameState {
   const rng = makeRng(o.seed)
   const sunDays = spreadDays(site.sunShare.value, cfg.days, 0.5)
   const earthDays = o.mode === 'cadet' ? Array<boolean>(cfg.days).fill(true) : spreadDays(site.earthShare.value, cfg.days, 0.2)
-  const plan = planEvents(o.mode, earthDays, rng)
-  return {
+  const plan = planEvents(o.mode, earthDays, rng, o.training === true)
+  const game: GameState = {
     mode: o.mode,
     siteId: o.siteId,
     seed: o.seed,
@@ -180,11 +197,14 @@ export function newGame(o: NewGameOptions): GameState {
     earthDays,
     storms: plan.storms,
     flares: plan.flares,
-    flareSeen: plan.flares.map(() => false),
+    // A flare from before the mission (training only) is already in the Sun Watch on Day 1.
+    flareSeen: plan.flares.map((f) => f.day < 1),
     flareResolved: plan.flares.map(() => false),
     guesses: plan.flares.map(() => null),
     history: [],
   }
+  if (o.training === true) game.training = true
+  return game
 }
 
 export function radioAvailable(s: GameState): boolean {
@@ -374,6 +394,27 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
   power = round2(Math.min(METER_MAX, Math.max(0, power)))
   food = round2(Math.min(METER_MAX, Math.max(0, food)))
   radiation = round2(Math.min(METER_MAX, Math.max(0, radiation)))
+
+  // Training: on the assisted days no meter passes the crew's worried line, so the day cannot be lost. The storm record above keeps the real rays.
+  const held: (keyof Meters)[] = []
+  if (state.training === true && d <= TRAINING_DAYS) {
+    if (air < TRAINING_FLOOR.air) {
+      air = TRAINING_FLOOR.air
+      held.push('air')
+    }
+    if (power < TRAINING_FLOOR.power) {
+      power = TRAINING_FLOOR.power
+      held.push('power')
+    }
+    if (state.hasFood && food < TRAINING_FLOOR.food) {
+      food = TRAINING_FLOOR.food
+      held.push('food')
+    }
+    if (radiation > TRAINING_RADIATION_MAX) {
+      radiation = TRAINING_RADIATION_MAX
+      held.push('radiation')
+    }
+  }
   const after: Meters = { air, power, radiation, food }
 
   const lastDay = d >= state.totalDays
@@ -407,6 +448,7 @@ export function step(state: GameState, choice: Choice, rng: Rng): GameState {
     after,
     flavour: Math.floor(rng() * 1000),
   }
+  if (held.length > 0) record.held = held
 
   const next: GameState = {
     ...state,

@@ -192,7 +192,7 @@ describe('the day report: flare news and results', () => {
     const base = { ...calmGame(), storms: [{ stormId: 'storm-6', arrivalDay: 1, size: 'small' as const, profile: [1] }], shield: 6 }
     const after = step(base, { jobs: { air: 2, shield: 0, plants: 0, radio: 0 }, go: false, walk: 'short' }, makeRng(1))
     render(<Report game={after} onNext={() => undefined} />)
-    expect(document.body.textContent).toContain('A storm called the walkers home')
+    expect(screen.getByRole('img', { name: /A storm called the walkers home/ })).toBeTruthy()
   })
 })
 

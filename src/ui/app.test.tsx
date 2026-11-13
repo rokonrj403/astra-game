@@ -24,33 +24,44 @@ function startGame(mode: 'Cadet' | 'Commander') {
   render(<App />)
   tap('Play')
   tap(/Malapert Massif/)
+  tap('Go')
   tap(new RegExp(mode))
 }
 
 describe('screens', () => {
-  it('start screen says ASTRA is not NASA and discloses AI', () => {
+  it('the start screen is a picture and a Play button, says in a few words that ASTRA is not NASA, and discloses AI for screen readers', () => {
     render(<App />)
-    const text = document.body.textContent ?? ''
-    expect(text).toContain('not made or endorsed by NASA')
-    expect(text).toContain('Claude')
+    const main = document.querySelector('main')!
+    const words = (main.textContent ?? '').trim().split(/\s+/).filter(Boolean)
+    expect(words.length).toBeLessThanOrEqual(12)
+    expect(main.textContent).toContain('Not endorsed by NASA')
+    const about = screen.getByText(/Uses NASA data/).getAttribute('aria-label')!
+    expect(about).toContain('not made or endorsed by NASA')
+    expect(about).toContain('Claude')
     // The game has no Kokoro audio (only the video does), so it must not claim Kokoro voices.
-    expect(text).toContain('your device’s voice')
-    expect(text).not.toContain('Kokoro')
+    expect(about).toContain('your device’s voice')
+    expect(about).not.toContain('Kokoro')
   })
-
-  it('the place screen names the 9 candidate regions without promising a landing', () => {
+  it('the place screen is 9 picture tiles; the name shows when one is picked; the NASA wording is behind an info tap', () => {
     render(<App />)
     tap('Play')
+    const tiles = document.querySelectorAll('.place')
+    expect(tiles).toHaveLength(9)
+    const words = (document.querySelector('main')!.textContent ?? '').trim().split(/\s+/).filter(Boolean)
+    expect(words.length).toBeLessThanOrEqual(12)
+    expect(document.body.textContent).not.toContain('Malapert')
+    tap(/Malapert Massif/)
+    expect(screen.getByText('Malapert Massif')).toBeTruthy()
+    tap('About these places')
     const text = document.body.textContent ?? ''
     expect(text).toContain('9 candidate landing regions near the Moon')
     expect(text).not.toMatch(/Artemis III will land|NASA picked/i)
-    expect(screen.getAllByRole('button').filter((b) => b.className.includes('choice'))).toHaveLength(9)
   })
-
   it('the Commander card says "Stronger storms" and the Cadet card does not', () => {
     render(<App />)
     tap('Play')
     tap(/Malapert Massif/)
+  tap('Go')
     const cadet = screen.getByRole('button', { name: /Cadet/ })
     const commander = screen.getByRole('button', { name: /Commander/ })
     expect(commander.textContent).toContain('Stronger storms')
@@ -84,21 +95,22 @@ describe('screens', () => {
     expect(screen.getByRole('meter', { name: 'Food' })).toBeTruthy()
   })
 
-  it('an idle game ends with Why it happened, a real cause chain and the end screen', () => {
+  it('an idle game ends with the Why picture strip, then the end screen', () => {
     startGame('Cadet')
     for (let guard = 0; guard < 12; guard++) {
-      if (screen.queryByRole('heading', { name: 'Why it happened' }) || screen.queryByRole('heading', { name: /Mission complete/ })) break
-      if (screen.queryByRole('button', { name: 'Next day' }) && screen.queryByText(/Share power/)) tap('Next day')
-      else if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
+      if (screen.queryByRole('group', { name: 'Why it happened' }) || screen.queryByRole('heading', { name: /Mission complete/ })) break
+      if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
+      else if (screen.queryByRole('button', { name: 'Next day' }) && screen.queryByLabelText('Share power')) tap('Next day')
       else if (screen.queryByRole('button', { name: 'Next day' })) tap('Next day')
     }
-    expect(screen.getByRole('heading', { name: 'Why it happened' })).toBeTruthy()
-    expect(document.body.textContent).toMatch(/rescue ship/)
+    const strip = screen.getByRole('group', { name: 'Why it happened' })
+    expect(strip.querySelectorAll('figure')).toHaveLength(3)
+    for (const cap of strip.querySelectorAll('figcaption')) expect(cap.textContent!.trim().split(/\s+/).length).toBeLessThanOrEqual(4)
+    expect(document.body.textContent).toMatch(/Rescue ship|Shield|A flare/)
     tap('See my mission')
-    expect(screen.getByRole('heading', { name: 'The rescue ship is here' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Rescue ship' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Play again' })).toBeTruthy()
   })
-
   it('calling Earth shows the radio delay before the answer', async () => {
     startGame('Cadet')
     fireEvent.click(screen.getByRole('button', { name: 'More blocks for Radio' }))
@@ -120,17 +132,18 @@ describe('screens', () => {
     expect(screen.getByRole('heading', { name: 'ASTRA' })).toBeTruthy()
   })
 
-  it("Today's Sun says SAVED, with the saved date, when NASA cannot be reached", async () => {
+  it("Today's Sun says SAVED with the saved date, and the full explanation is behind an info tap", async () => {
     render(<App />)
     tap("Today’s Sun")
     await waitFor(() => expect(document.querySelector('[data-status="SAVED"]')).not.toBeNull())
     expect(document.querySelector('[data-status="LIVE"]')).toBeNull()
+    expect(document.body.textContent).toContain('12 Nov 2026')
+    expect(document.body.textContent).not.toContain('does not predict storms')
+    tap('About Today’s Sun')
     const text = document.body.textContent ?? ''
-    expect(text).toContain('12 Nov 2026')
     expect(text).toContain('not live')
     expect(text).toContain('does not predict storms')
   })
-
   it("Today's Sun says LIVE only after NASA really answers", async () => {
     const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as Response
     vi.stubGlobal('fetch', (url: string) =>
@@ -161,11 +174,12 @@ describe('screens', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     tap('Play')
     tap(/Malapert Massif/)
+  tap('Go')
     tap(/Cadet/)
     // A steady split: 3 blocks Air, 3 blocks Shield, every day, so the storm reaches the base.
     for (let guard = 0; guard < 40; guard++) {
-      if (screen.queryByRole('heading', { name: /Mission complete|The rescue ship is here/ })) break
-      if (screen.queryByRole('heading', { name: 'Why it happened' })) tap('See my mission')
+      if (screen.queryByRole('heading', { name: /Mission complete|Rescue ship/ })) break
+      if (screen.queryByRole('group', { name: 'Why it happened' })) tap('See my mission')
       else if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
       else if (screen.queryByRole('button', { name: 'Finish the mission' })) tap('Finish the mission')
       else if (screen.queryByText(/Share power/)) {
@@ -182,14 +196,14 @@ describe('screens', () => {
     expect(screen.getAllByLabelText('Locked storm card')).toHaveLength(7)
   })
 
-  it('the day report says "stayed at" when a bar does not change, never "from 0 to 0"', () => {
+  it('the day report is arrows and icons; the sentences are for screen readers, and say "stayed at" when a bar does not change', () => {
     startGame('Cadet')
     tap('Next day')
-    const text = document.body.textContent ?? ''
-    expect(text).toMatch(/Radiation stayed at 0\./)
-    expect(text).not.toMatch(/went from (\d+) to \1\./)
+    expect(screen.getByLabelText('Radiation stayed at 0.')).toBeTruthy()
+    const labels = [...document.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label')!)
+    expect(labels.some((l) => /went from (\d+) to \./.test(l))).toBe(false)
+    expect(document.querySelectorAll('.summary li svg').length).toBeGreaterThanOrEqual(6)
   })
-
   it('the base screen has the base picture, 4 crew faces, ORBI and a sticky Next day button', () => {
     startGame('Cadet')
     expect(screen.getByRole('img', { name: /^The Moon base\./ })).toBeTruthy()
@@ -249,6 +263,7 @@ describe('screens', () => {
       tap('Back')
       tap('Play')
       tap(/Malapert Massif/)
+  tap('Go')
       tap(/Cadet/)
       fireEvent.click(screen.getAllByRole('button', { name: 'Read aloud' })[0]!)
       expect(spoken.at(-1)).toMatch(/ORBI says: You have 6 blocks/)
@@ -303,6 +318,7 @@ describe('screens', () => {
     render(<App />)
     tap('Play')
     tap(/Malapert Massif/)
+  tap('Go')
     tap(/Cadet/)
     const text = document.body.textContent ?? ''
     expect(text).not.toMatch(/\bsols?\b/i)

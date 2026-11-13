@@ -1,6 +1,8 @@
-import { History, Lock, Save, Sun, Wifi, type LucideIcon } from 'lucide-react'
+import { useState } from 'react'
+import { BadgeCheck, Check, ExternalLink, History, Info, Lock, Save, Sun, Wifi, type LucideIcon } from 'lucide-react'
 import storms from '../data/storms.json'
 import type { SunStatus, SunView } from '../live/sun'
+import { BurstArt } from './pictos'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -44,68 +46,96 @@ export function SunChip({ sun, onTap }: { sun: SunView | null; onTap: () => void
 }
 
 export function SunScreen({ sun, onBack }: { sun: SunView | null; onBack: () => void }) {
+  const [info, setInfo] = useState(false)
+  const [open, setOpen] = useState<string | null>(null)
+  const flares = sun ? sun.flares.slice(0, 8) : []
+  const picked = flares.find((f) => f.link === open)
+  const sentence =
+    !sun
+      ? 'Asking NASA what the Sun did lately.'
+      : sun.status === 'LIVE'
+        ? `NASA answered just now (${when(sun.asOf)}). These are real flares from NASA’s list.`
+        : `We could not get a fresh answer from NASA, so this is a saved copy from ${when(sun.asOf)}. It is real NASA data, but it is not live.`
   return (
     <main className="app">
-      <button className="link" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        Back
-      </button>
-      <h2>Today’s Sun</h2>
-      <div className="chips">
-        <StatusBadge label={sun ? sun.status : 'LOADING'} />
+      <div className="row between">
+        <button className="link" onClick={onBack}>
+          Back
+        </button>
+        <button className="iconbtn" onClick={() => setInfo((i) => !i)} aria-pressed={info} aria-label="About Today’s Sun">
+          <Info size={22} aria-hidden="true" />
+        </button>
       </div>
-
-      {!sun && <p>Asking NASA what the Sun did lately...</p>}
-
-      {sun?.status === 'LIVE' && (
-        <p>
-          NASA answered just now ({when(sun.asOf)}). These are real flares from NASA’s list.
-        </p>
-      )}
-      {sun?.status === 'SAVED' && (
-        <p>
-          We could not get a fresh answer from NASA, so this is a saved copy from {when(sun.asOf)}. It is real NASA data, but it is not live.
-        </p>
-      )}
+      <h2 className="sr">Today’s Sun</h2>
+      <div className="row between">
+        <StatusBadge label={sun ? sun.status : 'LOADING'} />
+        {sun && <span className="asof">{when(sun.asOf)}</span>}
+      </div>
+      <span className="sr" role="status">
+        {sentence}
+      </span>
 
       {sun && (
         <>
-          <section className="card stack" aria-label="Flares">
-            <h3>
-              {sun.status === 'LIVE' ? `Flares in the last ${sun.windowDays} days` : `Flares in the ${sun.windowDays} days before ${when(sun.asOf)}`}
-            </h3>
-            <p className="muted">A flare is a sudden bright flash on the Sun. Letters show strength: C is small, M is medium, X is big.</p>
-            {sun.flares.length === 0 ? (
-              <p>No flares in this time. The Sun was quiet.</p>
+          <section className="shelf" aria-label="Flares">
+            {flares.length === 0 ? (
+              <span className="calm" role="img" aria-label="No flares in this time. The Sun was quiet.">
+                <Sun size={40} color="var(--sun)" aria-hidden="true" />
+                <Check size={30} color="var(--plants)" aria-hidden="true" />
+              </span>
             ) : (
-              <ul className="list">
-                {sun.flares.slice(0, 10).map((f) => (
-                  <li key={f.link + f.peakTime}>
-                    <b>{f.class}</b>
-                    <span>
-                      {when(f.peakTime)} · <a href={f.link} target="_blank" rel="noreferrer">NASA record</a>
-                    </span>
-                  </li>
+              <div className="stickers">
+                {flares.map((f) => (
+                  <div className="sticker" key={f.link + f.peakTime}>
+                    <button onClick={() => setOpen(open === f.link ? null : f.link)} aria-pressed={open === f.link} aria-label={`${f.class} flare, ${when(f.peakTime)}`}>
+                      <BurstArt cls={f.class} />
+                    </button>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
-
-          <section className="card stack" aria-label="Magnetic storm">
-            <h3>Latest magnetic storm</h3>
-            <p className="muted">Kp goes from 0 to 9. A 5 or more is a magnetic storm. It can make auroras.</p>
+          {picked && (
+            <div className="detail" role="status">
+              <span>
+                {picked.class} · {when(picked.peakTime)}
+              </span>
+              <a href={picked.link} target="_blank" rel="noreferrer" aria-label="NASA record">
+                <BadgeCheck size={22} aria-hidden="true" />
+                <ExternalLink size={18} aria-hidden="true" />
+              </a>
+            </div>
+          )}
+          <section className="shelf" aria-label="Magnetic storm">
             {sun.magneticStorm ? (
-              <p>
-                Kp {sun.magneticStorm.kp} on {when(sun.magneticStorm.time)} · <a href={sun.magneticStorm.link} target="_blank" rel="noreferrer">NASA record</a>
-              </p>
+              <div className="row between" role="img" aria-label={`Latest magnetic storm: Kp ${sun.magneticStorm.kp} on ${when(sun.magneticStorm.time)}`}>
+                <span className="dots big" aria-hidden="true">
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <i key={i} className={i < sun.magneticStorm!.kp ? 'on' : undefined} />
+                  ))}
+                </span>
+                <a className="iconlink" href={sun.magneticStorm.link} target="_blank" rel="noreferrer" aria-label="NASA record">
+                  <BadgeCheck size={22} aria-hidden="true" />
+                </a>
+              </div>
             ) : (
-              <p>No magnetic storm in the last 30 days.</p>
+              <span className="calm" role="img" aria-label="No magnetic storm in the last 30 days.">
+                <Check size={30} color="var(--plants)" aria-hidden="true" />
+              </span>
             )}
           </section>
-
-          <p className="fineprint">
-            NASA lists flares after they happen. ASTRA does not predict storms. The storms in the game are real storms from the past. Source: {sun.source}
-          </p>
         </>
+      )}
+
+      {info && (
+        <div className="note stack">
+          <p>{sentence}</p>
+          <p>A flare is a sudden bright flash on the Sun. Letters show strength: C is small, M is medium, X is big. Kp goes from 0 to 9. A 5 or more is a magnetic storm. It can make auroras.</p>
+          <p className="fineprint">
+            NASA lists flares after they happen. ASTRA does not predict storms. The storms in the game are real storms from the past.
+            {sun ? ` Source: ${sun.source}` : ''}
+          </p>
+        </div>
       )}
     </main>
   )

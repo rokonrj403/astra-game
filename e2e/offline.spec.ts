@@ -20,6 +20,7 @@ test('after one visit the game loads and plays with no network at all', async ({
 
   await page.getByRole('button', { name: 'Play' }).click()
   await page.getByRole('button', { name: /Malapert Massif/ }).click()
+  await page.getByRole('button', { name: 'Go' }).click()
   await page.getByRole('button', { name: /Cadet/ }).click()
   await expect(page.getByText('Day 1 of 10')).toBeVisible()
 
@@ -30,7 +31,7 @@ test('after one visit the game loads and plays with no network at all', async ({
 
   await page.getByRole('button', { name: 'More blocks for Air' }).click()
   await page.getByRole('button', { name: 'Next day' }).click()
-  await expect(page.getByRole('heading', { name: 'Day 1 report' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Day 1' })).toBeVisible()
 
   await context.setOffline(false)
 })

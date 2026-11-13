@@ -54,6 +54,27 @@ export function FlareArt({ flare, showSide = true }: { flare: Clues; showSide?: 
   )
 }
 
+/** A flare drawn by size only (a burst with 1, 2 or 3 pulses). Used where we know the size but not the cloud or the side, so nothing is claimed about them. */
+export function BurstArt({ cls }: { cls: string }) {
+  const level = sizeLevel(cls)
+  const burst = [8, 13, 18][level - 1]!
+  const spikes = Array.from({ length: 10 }, (_, i) => {
+    const a = (i / 10) * Math.PI * 2
+    const r = i % 2 === 0 ? burst : burst * 0.5
+    return `${68 + r * Math.cos(a)},${24 + r * Math.sin(a)}`
+  }).join(' ')
+  return (
+    <svg viewBox="0 0 136 76" role="img" aria-hidden="true" className="flareart">
+      <circle cx="68" cy="52" r="30" fill="#E69F00" opacity="0.18" />
+      <circle cx="68" cy="52" r="26" fill="#E69F00" />
+      {Array.from({ length: level }, (_, i) => (
+        <circle key={i} cx="68" cy="24" r={burst + 5 + i * 6} fill="none" stroke="#D55E00" strokeWidth="2.5" opacity={0.85 - i * 0.22} />
+      ))}
+      <polygon points={spikes} fill="#D55E00" stroke="#FFD36A" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 export function FlareSun({ flare, showSide = true, width = 128, label = true }: { flare: Clues; showSide?: boolean; width?: number; label?: boolean }) {
   const [words, setWords] = useState(false)
   const level = sizeLevel(flare.class)

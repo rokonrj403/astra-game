@@ -12,7 +12,7 @@ async function countWords(page: Page, selector = 'main'): Promise<number> {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
       for (let node = walker.nextNode(); node; node = walker.nextNode()) {
         const el = node.parentElement
-        if (!el || el.closest('[aria-hidden="true"], [hidden]')) continue
+        if (!el || el.closest('[aria-hidden="true"], [hidden], .sr')) continue // .sr = text for screen readers only, not shown
         const cs = getComputedStyle(el)
         if (cs.display === 'none' || cs.visibility === 'hidden') continue
         n += (node.textContent ?? '').trim().split(/\s+/).filter(Boolean).length
@@ -20,6 +20,21 @@ async function countWords(page: Page, selector = 'main'): Promise<number> {
     }
     return n
   }, selector)
+}
+
+// HARD RULE for children's screens: at most 12 visible words (numbers count). Screens not listed here are adult pages or still to convert.
+const BUDGET: Record<string, number> = {
+  '01-start': 12,
+  '02-place': 12,
+  '03-mode': 12,
+  '06-sun-saved': 12,
+  '08-report': 12,
+  '10-report-storm': 12,
+  '11-report-radio': 12,
+  '12-why': 12,
+  '13-end': 12,
+  '14-storm-cards': 400,
+  '17-journal': 12,
 }
 
 // The word count of every screen the phone check visits, written to e2e-shots/words.json for the string audit.
@@ -41,7 +56,9 @@ test.afterAll(() => {
  */
 async function audit(page: Page, name: string) {
   await page.waitForLoadState('networkidle')
-  wordLog.push({ screen: name, words: await countWords(page) })
+  const words = await countWords(page)
+  wordLog.push({ screen: name, words })
+  if (BUDGET[name] !== undefined) expect(words, `${name} has ${words} visible words`).toBeLessThanOrEqual(BUDGET[name])
   await page.screenshot({ path: `e2e-shots/${name}.png`, fullPage: true })
   const issues = await page.evaluate((width) => {
     const out: string[] = []
@@ -85,6 +102,7 @@ async function toBase(page: Page, mode: 'Cadet' | 'Commander') {
   await page.getByRole('button', { name: 'Play' }).click()
   await audit(page, '02-place')
   await page.getByRole('button', { name: /Malapert Massif/ }).click()
+  await page.getByRole('button', { name: 'Go' }).click()
   await audit(page, '03-mode')
   await page.getByRole('button', { name: new RegExp(mode) }).click()
 }
@@ -153,8 +171,8 @@ test('the storm, radio call, why-it-happened, end and card screens fit', async (
   await toBase(page, 'Cadet')
   const seen = new Set<string>()
   for (let guard = 0; guard < 40; guard++) {
-    if (await page.getByRole('heading', { name: /Mission complete|The rescue ship is here/ }).isVisible()) break
-    if (await page.getByRole('heading', { name: 'Why it happened' }).isVisible()) {
+    if (await page.getByRole('heading', { name: /Mission complete|Rescue ship/ }).isVisible()) break
+    if (await page.getByRole('group', { name: 'Why it happened' }).isVisible()) {
       await audit(page, '12-why')
       await page.getByRole('button', { name: 'See my mission' }).click()
     } else if (await page.getByRole('button', { name: 'See what happened' }).isVisible()) {

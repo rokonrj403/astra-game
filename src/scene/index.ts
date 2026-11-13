@@ -14,6 +14,7 @@ export { DomeShield, Rays, AllClear, planRays, litSegments, hitsPerSegment, hitT
 export { Habitat, Greenhouse, Dish, Airlock, SolarPanels, Ground, Pips, Stepper, BuildingTarget, DomeTarget } from './Buildings'
 export { Walker, WalkTrail, WALK_PATH, walkDuration, pointAlong, type WalkKind, type WalkMode, type WalkerProps } from './Walker'
 export { CrewToken, OrbiToken, CREW_POS, ORBI_POS } from './Actors'
+export { JOB_ICON, JOB_COLOR, CREW_JOB, type JobId } from './jobs'
 export { ZONES, hitZone, clientToScene, zoneCenter, type Zone } from './zones'
 export { useReducedMotion, isLowEnd } from './motion'
 export {

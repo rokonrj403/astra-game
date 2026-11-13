@@ -15,6 +15,7 @@ import { setCalm } from './motion'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
 import { TwinHost } from './twin'
+import { WelcomeIntro } from './welcome'
 
 type Screen = 'start' | 'place' | 'mode' | 'play' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers' | 'journal'
 const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers', 'journal']
@@ -36,6 +37,11 @@ export function App() {
   const [game, setGame] = useState<GameState | null>(null)
   const [sun, setSun] = useState<SunView | null>(null)
   const [met, setMet] = useState<string[]>(() => readJSON<string[]>(browserStore(), CARDS_KEY) ?? [])
+  // Preview hook: ?welcome (or ?welcome=commander) plays the welcome tour on its own. The real flow is wired in by the onboarding branch.
+  const [preview, setPreview] = useState<Mode | null>(() => {
+    const p = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('welcome')
+    return p === null ? null : p === 'commander' ? 'commander' : 'cadet'
+  })
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs)
   setCalm(prefs.calm === true) // idempotent: a flag and a class on the page, set before the screens read it
   const [journal, setJournal] = useState<JournalEntry[]>(() => readJSON<JournalEntry[]>(browserStore(), JOURNAL_KEY) ?? [])
@@ -154,6 +160,8 @@ export function App() {
     case 'play':
       break
   }
+
+  if (preview) return <WelcomeIntro mode={preview} onDone={() => setPreview(null)} onSkip={() => setPreview(null)} />
 
   return (
     <PrefsContext.Provider value={prefs}>

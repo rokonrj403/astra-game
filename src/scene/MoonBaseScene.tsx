@@ -1,6 +1,6 @@
 import { useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from 'react'
 import { sceneLabel } from '../ui/look'
-import { CrewToken, OrbiToken } from './Actors'
+import { CREW_POS, CrewToken, OrbiToken } from './Actors'
 import { Airlock, BuildingTarget, DomeTarget, Dish, Greenhouse, Ground, Habitat, PIP_SPOTS, Pips, SolarPanels, Stepper } from './Buildings'
 import { CloudLane, type CloudState } from './CloudLane'
 import { AllClear, DomeShield, Rays, hitTimes, hitsPerSegment, planRays } from './Dome'
@@ -55,6 +55,10 @@ export interface MoonBaseSceneProps {
   hideOrbi?: boolean
   /** Which crew to draw (default all four). The Start screen draws none and peeks one out of a window itself. */
   crew?: CrewId[]
+  /** Where new crew tokens come from (the lander hatch): each one slides from here to its post when it first appears. */
+  crewFrom?: { x: number; y: number }
+  /** Extra SVG drawn on top of the ground layer (the welcome tour's lander and ORBI). Never takes a tap. */
+  layers?: ReactNode
   /** Crew keep standing when rays fall (no roof glyphs): for the Start screen's show, not for the game. */
   noShelter?: boolean
   /** Fewer particles. Default: detected. */
@@ -70,7 +74,7 @@ const PLANNED: Record<number, WalkKind | undefined> = { 1: 'short', 2: 'long' }
  * The living Moon base, one 360 x 440 SVG (scales to the screen) with HTML bubbles laid over it.
  * Props in, picture out: nothing here reads the game or knows how a flare ends. There are no words in the picture.
  */
-export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', stepperY, onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, hideOrbi = false, crew = ['safia', 'kofi', 'leo', 'mei'], noShelter = false, children, ref }: MoonBaseSceneProps) {
+export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, blocksLeft, steppers = 'selected', stepperY, onAdd, onRemove, onSunTap, clueTags = [], tagsOpen = false, dim = false, transitionMs = 480, unsafe = [], calm = false, lowEnd, hideOrbi = false, crew = ['safia', 'kofi', 'leo', 'mei'], noShelter = false, crewFrom, layers, children, ref }: MoonBaseSceneProps) {
   const root = useRef<HTMLDivElement>(null)
   const latest = useRef(model)
   latest.current = model
@@ -160,13 +164,21 @@ export function MoonBaseScene({ model, reveal = null, walk = null, hot = null, b
         <g className="sc-ground-layer" style={{ pointerEvents: 'none' }}>
           {planned && !walk && <WalkTrail kind={planned} />}
           {!hideOrbi && <OrbiToken alert={model.storm !== 'none' || model.flare !== null} />}
-          {crew.map((id) => (
-            <CrewToken key={id} id={id} mood={model.moods[id]} sheltered={sheltered} unsafe={unsafe.includes(id)} />
-          ))}
+          {crew.map((id) => {
+            const token = <CrewToken key={id} id={id} mood={model.moods[id]} sheltered={sheltered} unsafe={unsafe.includes(id)} />
+            return crewFrom ? (
+              <g key={id} className="sc-from" style={{ ['--dx' as string]: `${crewFrom.x - CREW_POS[id].home.x}px`, ['--dy' as string]: `${crewFrom.y - CREW_POS[id].home.y}px` }}>
+                {token}
+              </g>
+            ) : (
+              token
+            )
+          })}
           {walk && <Walker key={walk.key} kind={walk.kind} mode={walk.mode} playKey={walk.key} onDone={walk.onDone} calm={calm} />}
           <DomeShield charge={charge} fresh={reveal ? 0 : blocks.shield} storm={model.storm === 'now' || reveal !== null} hits={reveal?.kind === 'rays' ? hits : undefined} hitAt={hitAt} />
           {reveal?.kind === 'rays' && <Rays key={reveal.key} rays={rays} />}
           {reveal?.kind === 'clear' && <AllClear key={reveal.key} />}
+          {layers}
         </g>
 
         {stepTargets.map((t) => (

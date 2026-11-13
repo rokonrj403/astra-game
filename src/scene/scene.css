@@ -620,3 +620,18 @@
 .sc-science:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
+
+/* Welcome tour: a crew member slides from the lander hatch to their post. */
+.sc-from {
+  animation: sc-from 0.8s var(--sc-enter) both;
+}
+@keyframes sc-from {
+  from {
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

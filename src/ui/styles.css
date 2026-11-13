@@ -846,3 +846,58 @@ button:active:not(:disabled) {
     transform: none;
   }
 }
+
+/* Flare watch, science goal, moonwalk */
+.watch {
+  border: 3px solid var(--radiation);
+  background: #2a1a14;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+}
+.watch .chips {
+  gap: 6px;
+}
+.goal {
+  display: grid;
+  gap: 6px;
+}
+.goalbar {
+  height: 12px;
+  background: var(--night);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.goalbar i {
+  display: block;
+  height: 100%;
+  background: var(--plants);
+  border-radius: 8px;
+}
+.walks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.walks button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  min-height: 64px;
+  font-size: 1rem;
+  text-align: left;
+}
+.walks button small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+.walks button[aria-pressed='true'] {
+  border-color: var(--sun);
+  background: var(--panel-2);
+}

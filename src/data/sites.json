@@ -12,12 +12,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.277,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.684,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.422,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.995,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -33,12 +33,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.285,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.629,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.429,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.733,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -54,12 +54,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.381,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.845,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.486,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 1,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -75,12 +75,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.282,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.542,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.683,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 1,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -96,12 +96,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.327,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.8,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.529,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 1,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -117,12 +117,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.303,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.835,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.278,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.714,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -138,12 +138,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.383,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.538,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.544,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.859,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -159,12 +159,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.391,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.743,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.562,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.618,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   },
   {
@@ -180,12 +180,12 @@
       "source": "NASA 9-region map, approximate box centre; raw/artemis/regions.csv"
     },
     "sunShare": {
-      "value": 0.271,
-      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km"
+      "value": 0.656,
+      "source": "LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km"
     },
     "earthShare": {
-      "value": 0.351,
-      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km"
+      "value": 0.499,
+      "source": "LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km"
     }
   }
 ]

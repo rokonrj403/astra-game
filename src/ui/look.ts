@@ -1,5 +1,5 @@
 import { SHIELD_LETS_THROUGH } from '../engine/constants'
-import { activeWarning } from '../engine/game'
+import { activeStorm, activeWatch } from '../engine/game'
 import type { GameState } from '../engine/types'
 
 export type CrewId = 'safia' | 'kofi' | 'leo' | 'mei'
@@ -21,7 +21,7 @@ export const HIGH_RADIATION = 60
  * Safia watches Food, Kofi watches Power and Radiation, Leo watches Air. Mei is the radio officer, so only events change her.
  */
 export function crewMoods(g: GameState): Record<CrewId, Mood> {
-  if (g.status === 'playing' && activeWarning(g) !== null) return { safia: 'surprised', kofi: 'surprised', leo: 'surprised', mei: 'surprised' }
+  if (g.status === 'playing' && (activeWatch(g) !== null || activeStorm(g) !== null)) return { safia: 'surprised', kofi: 'surprised', leo: 'surprised', mei: 'surprised' }
   return {
     safia: g.hasFood && g.food < LOW.food ? 'worried' : 'happy',
     kofi: g.power < LOW.power || g.radiation >= HIGH_RADIATION ? 'worried' : 'happy',
@@ -42,13 +42,14 @@ export interface SceneState {
   plantsHappy: boolean
 }
 
+/** The base picture. The shield is the charge carried over from before plus the blocks being given today (0 to 6). */
 export function sceneState(g: GameState, shieldBlocks: number): SceneState {
-  const warn = g.status === 'playing' ? activeWarning(g) : null
+  const playing = g.status === 'playing'
   return {
     sunny: g.sunDays[g.day - 1] === true,
     earth: g.earthDays[g.day - 1] === true,
-    shield: Math.max(0, Math.min(6, shieldBlocks)),
-    storm: warn === null ? 'none' : warn.daysUntil <= 0 ? 'now' : 'coming',
+    shield: Math.max(0, Math.min(6, g.shield + shieldBlocks)),
+    storm: !playing ? 'none' : activeStorm(g) !== null ? 'now' : activeWatch(g) !== null ? 'coming' : 'none',
     powerLow: g.power < LOW.power,
     plantsHappy: g.hasFood ? g.food >= LOW.food : g.air >= LOW.air,
   }

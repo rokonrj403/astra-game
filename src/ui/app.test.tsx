@@ -74,9 +74,9 @@ describe('screens', () => {
     expect(screen.getByText('0 left')).toBeTruthy()
   })
 
-  it('Cadet has no Plants job or food bar; Commander has both', () => {
+  it('Plants (air and science) is a job in both modes; only Commander has a food bar', () => {
     startGame('Cadet')
-    expect(screen.queryByRole('button', { name: 'More blocks for Plants' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'More blocks for Plants' })).toBeTruthy()
     expect(screen.queryByRole('meter', { name: 'Food' })).toBeNull()
     cleanup()
     startGame('Commander')
@@ -193,7 +193,7 @@ describe('screens', () => {
   it('the base screen has the base picture, 4 crew faces, ORBI and a sticky Next day button', () => {
     startGame('Cadet')
     expect(screen.getByRole('img', { name: /^The Moon base\./ })).toBeTruthy()
-    for (const who of ['Safia', 'Kofi', 'Leo', 'Mei']) expect(screen.getByRole('img', { name: new RegExp(`^${who},`) })).toBeTruthy()
+    for (const who of ['Safia', 'Kofi', 'Leo', 'Mei']) expect(screen.getAllByRole('img', { name: new RegExp(`^${who},`) }).length).toBeGreaterThan(0)
     expect(screen.getByRole('img', { name: /ORBI/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Next day' }).parentElement?.className).toContain('sticky-cta')
   })

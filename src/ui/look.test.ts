@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { newGame } from '../engine/game'
+import { newGame, step } from '../engine/game'
+import { makeRng } from '../engine/rng'
 import type { GameState, StormPlan } from '../engine/types'
 import { changeLine } from './screens'
 import { SHIELD_LETS_THROUGH } from '../engine/constants'
 import { crewMoods, domeY, letsThrough, particlePlan, sceneLabel, sceneState } from './look'
 
-const calm = (mode: 'cadet' | 'commander' = 'commander'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], warned: [] })
-const plan = (arrivalDay: number): StormPlan => ({ stormId: 'storm-6', arrivalDay, size: 'big', profile: [1] })
-const warnedStorm = (g: GameState, arrivalDay: number): GameState => ({ ...g, storms: [plan(arrivalDay)], warned: [true] })
+const calm = (mode: 'cadet' | 'commander' = 'commander'): GameState => ({ ...newGame({ mode, siteId: 'region-3', seed: 2 }), storms: [], flares: [], flareSeen: [], flareResolved: [] })
+const plan = (arrivalDay: number, profile = [1]): StormPlan => ({ stormId: 'storm-6', arrivalDay, size: 'big', profile })
+/** A real flare happened yesterday. If `seen`, the Sun Watch has shown it, so a flare watch is on today. The storm that follows is hidden. */
+const watched = (g: GameState, seen = true): GameState => ({ ...g, day: 3, storms: [plan(4)], flares: [{ flareId: 'flr-44029', day: 2, stormIndex: 0 }], flareSeen: [seen], flareResolved: [false] })
 
 describe('crew faces', () => {
   it('everyone is happy when all bars are fine', () => {
@@ -26,14 +28,13 @@ describe('crew faces', () => {
     expect(crewMoods({ ...calm('cadet'), food: 0 }).safia).toBe('happy')
   })
 
-  it('a storm warning beats worry: everyone is surprised', () => {
-    const m = crewMoods({ ...warnedStorm(calm(), 3), air: 10, power: 10 })
+  it('a flare watch beats worry: everyone is surprised', () => {
+    const m = crewMoods({ ...watched(calm()), air: 10, power: 10 })
     expect(Object.values(m).every((x) => x === 'surprised')).toBe(true)
   })
 
-  it('an unwarned storm does not change any face (the game never spoils a surprise)', () => {
-    const g: GameState = { ...calm(), storms: [plan(2)], warned: [false] }
-    expect(Object.values(crewMoods(g)).every((m) => m === 'happy')).toBe(true)
+  it('a flare nobody has seen yet changes no face (the game never spoils a surprise)', () => {
+    expect(Object.values(crewMoods(watched(calm(), false))).every((m) => m === 'happy')).toBe(true)
   })
 })
 
@@ -50,11 +51,14 @@ describe('base picture states', () => {
     expect(sceneState(calm(), -1).shield).toBe(0)
   })
 
-  it('storm coming and storm now only show after a warning', () => {
+  it('a flare watch looks like "coming"; "now" shows only after a storm really hit and has days left', () => {
     const g = calm()
-    expect(sceneState({ ...g, storms: [plan(g.day + 2)], warned: [false] }, 0).storm).toBe('none')
-    expect(sceneState(warnedStorm(g, g.day + 2), 0).storm).toBe('coming')
-    expect(sceneState(warnedStorm(g, g.day), 0).storm).toBe('now')
+    expect(sceneState(g, 0).storm).toBe('none')
+    expect(sceneState(watched(g, false), 0).storm).toBe('none')
+    expect(sceneState(watched(g), 0).storm).toBe('coming')
+    const stormy = { ...g, storms: [plan(2, [1, 1])], day: 2, shield: 5 }
+    const hit = step(stormy, { jobs: { air: 2, shield: 1, plants: 0, radio: 0 }, go: false }, makeRng(1))
+    expect(sceneState(hit, 0).storm).toBe('now')
   })
 
   it('low battery and sad plants show when the bars are low', () => {
@@ -65,7 +69,7 @@ describe('base picture states', () => {
   })
 
   it('the picture has a spoken-word description of its state', () => {
-    const label = sceneLabel(sceneState(warnedStorm({ ...calm(), power: 10 }, 3), 4))
+    const label = sceneLabel(sceneState({ ...watched(calm()), power: 10 }, 4))
     expect(label).toContain('The shield has 4 blocks.')
     expect(label).toContain('A storm is coming.')
     expect(label).toContain('The battery is low.')

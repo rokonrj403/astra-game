@@ -2,12 +2,19 @@ export type Mode = 'cadet' | 'commander'
 export type Job = 'air' | 'shield' | 'plants' | 'radio'
 export type Jobs = Record<Job, number>
 export type StormSize = 'small' | 'big' | 'huge'
-export type Loss = 'air' | 'power' | 'radiation' | 'food'
+/** Why a mission ended badly. 'science' means the crew stayed safe but did not reach the science goal. */
+export type Loss = 'air' | 'power' | 'radiation' | 'food' | 'science'
 export type BadgeId = 'first-day' | 'storm-survivor' | 'green-thumb' | 'radio-hero' | 'night-owl'
+export type CrewName = 'safia' | 'kofi' | 'leo' | 'mei'
+/** A moonwalk is a bet: science if the day is calm, radiation if a storm hits while the crew is outside. The shield never protects walkers. */
+export type Walk = 'none' | 'short' | 'long'
 
 export interface Choice {
   jobs: Jobs
+  /** true = take the first option of today's situation, false = the second. */
   go: boolean
+  /** Moonwalk today. Costs blocks from the same 6. Default none. */
+  walk?: Walk
 }
 
 export interface StormPlan {
@@ -17,11 +24,29 @@ export interface StormPlan {
   profile: number[]
 }
 
+/**
+ * A real flare the Sun Watch shows. If `stormIndex` is a number, this real flare was followed by that real storm
+ * (it arrives `arrivalDay - day` days later). If it is null, the real flare was NOT followed by space rays (NASA DONKI).
+ */
+export interface FlareEvent {
+  flareId: string
+  /** The day the flare happens. It shows up in the next morning's Sun Watch. */
+  day: number
+  stormIndex: number | null
+}
+
 export interface Meters {
   air: number
   power: number
   radiation: number
   food: number
+}
+
+/** Effects of yesterday's choices that land today. */
+export interface Carry {
+  power: number
+  air: number
+  science: number
 }
 
 export interface DayRecord {
@@ -33,13 +58,29 @@ export interface DayRecord {
   storm: {
     index: number
     factor: number
+    /** Shield charge that met the storm (0 to 6). */
     shield: number
     letsThrough: number
     incoming: number
+    /** The player had seen the flare before this storm (Sun Watch), so it was not a complete surprise. */
     warned: boolean
   } | null
   cardId: string | null
+  /** true = took the first option of the situation. */
   went: boolean
+  walk: Walk
+  /** Science the walk really brought home (0 if a storm called the crew back). */
+  walkScience: number
+  /** A storm hit while the crew was outside: the walk's science was lost. */
+  calledHome: boolean
+  /** A flare watch the player knew about was on today. */
+  watching: boolean
+  /** Flares that showed up in this morning's Sun Watch. */
+  reported: string[]
+  /** Flares whose watch ended today, with what really happened (shown with the NASA record). */
+  resolved: { flareId: string; followed: boolean }[]
+  /** Shield charge at the end of the day, after it leaked 1. */
+  shieldAfter: number
   before: Meters
   after: Meters
   flavour: number
@@ -55,22 +96,50 @@ export interface GameState extends Meters {
   status: 'playing' | 'won' | 'lost'
   loss?: Loss
   science: number
+  /** Science needed by the last day to complete the mission. */
+  goal: number
+  /** Shield charge: +1 per block, leaks 1 each day, 0 to 6. It carries over, so it can be built before a storm. */
+  shield: number
+  carry: Carry
   sunDays: boolean[]
   earthDays: boolean[]
   storms: StormPlan[]
-  warned: boolean[]
+  flares: FlareEvent[]
+  /** Which flares have shown up in the Sun Watch. */
+  flareSeen: boolean[]
+  /** Which flares have already been explained ("this flare did / did not bring space rays"). */
+  flareResolved: boolean[]
   history: DayRecord[]
 }
 
-export interface Card {
-  id: string
-  question: string
-  go: string
-  stay: string
+export interface Option {
+  /** The button text, 10 simple words or fewer. */
+  label: string
   science: number
   power: number
   air: number
   radiation: number
+  food: number
+  /** Lands tomorrow. */
+  carry?: Partial<Carry>
+  /** Today's moonwalk brings 1 less science. */
+  slowWalk?: boolean
+  /** Today's plant experiments bring 1 less science. */
+  slowPlants?: boolean
+  /** Chance that tomorrow the air machine fails (air -15). */
+  failChance?: number
+}
+
+/** One situation a day, two choices, each with a real cost. */
+export interface Card {
+  id: string
+  question: string
+  /** Who is involved: their faces show next to the question. */
+  who: CrewName[]
+  a: Option
+  b: Option
+  /** Only offered on days Earth is in view. */
+  needsEarth?: boolean
 }
 
 export interface WhyStep {

@@ -58,12 +58,12 @@ write(
       latDeg: { value: num(r.lat_deg), source: `NASA 9-region map, approximate box centre (${r.coord_method}); raw/artemis/regions.csv` },
       lonDegEast: { value: num(r.lon_deg_east), source: 'NASA 9-region map, approximate box centre; raw/artemis/regions.csv' },
       sunShare: {
-        value: num(l.sun_mean_5km),
-        source: 'LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column sun_mean_5km',
+        value: num(l.sun_max_5km),
+        source: 'LRO LOLA average sunlight map (PGDA product 69, 75°S, 120 m, 18.6-year average): the best-lit spot within ~5 km of the region centre, because mission planners pick the best spot near a region; raw/lola/regions_lola.csv, column sun_max_5km',
       },
       earthShare: {
-        value: num(l.earth_mean_5km),
-        source: 'LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m), mean over ~5 km around the site; raw/lola/regions_lola.csv, column earth_mean_5km',
+        value: num(l.earth_max_5km),
+        source: 'LRO LOLA average Earth-in-view map (PGDA product 69, 75°S, 120 m, 18.6-year average): the spot within ~5 km of the region centre where Earth is in view most; raw/lola/regions_lola.csv, column earth_max_5km',
       },
     }
   }),
@@ -255,11 +255,9 @@ for (const e of bigFlares) {
   if (side) tally(`${cloud ? 'cloud' : 'nocloud'}-${side}`, `${cloud ? 'Cloud' : 'No cloud'}, ${side} side`, Boolean(sep))
   const flareId = /FLR\/(\d+)\//.exec(e.link)?.[1]
   const stormId = stormFlareIds.get(flareId) ?? null
-  // Followed flares are only used in the game when they are one of our 8 real storms (we have that storm's size and curve).
-  if (sep && !stormId) {
-    followedNotUsed++
-    continue
-  }
+  // Every followed flare is used. Only our 8 real storms have a known size and curve (`stormId`); for the others the outcome is real
+  // (NASA recorded a radiation storm) but its size is not in our data, so the game uses a small storm and says so (`sizeKnown: false`).
+  if (sep && !stormId) followedNotUsed++
   const hours = sep ? Math.round(((sep.t - peak) / 3_600_000) * 10) / 10 : null
   flareEntries.push({
     id: `flr-${flareId}`,
@@ -268,6 +266,7 @@ for (const e of bigFlares) {
     link: e.link,
     followed: Boolean(sep),
     stormId: sep ? stormId : null,
+    sizeKnown: Boolean(sep && stormId),
     cloud,
     side,
     location: e.sourceLocation ?? null,
@@ -281,7 +280,7 @@ write('flares.json', {
   rule: RULE,
   windowHours: WINDOW_H,
   source: 'NASA DONKI FLR and SEP records, archive pulled 2026-11-12 (raw/donki/MANIFEST.json); labelled by scripts/ingest.mjs',
-  note: `Followed flares that are not one of our 8 real storms (${followedNotUsed}) are counted in the statistics but not used in the game, because we have no size or curve for them. Flares that were not followed are all kept.`,
+  note: `All ${total.followed} flares followed by space rays and all ${total.n - total.followed} that were not are kept. Only 8 of the followed flares are our real storms with a known size and curve; for the other ${followedNotUsed} the outcome is real but the storm's size is not in our data, so the game uses a small storm and says so.`,
   flares: flareEntries,
 })
 write('flareStats.json', {

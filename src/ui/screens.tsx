@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react'
 import { Check, Globe, Moon, Radiation, Radio, Sun, type LucideIcon } from 'lucide-react'
 import sites from '../data/sites.json'
 import storms from '../data/storms.json'
-import { MODES, MODE_CARDS } from '../engine/constants'
+import { MODE_CARDS, RADIO_SCIENCE, RADIO_SCIENCE_MAX } from '../engine/constants'
 import { badges, explain, radioDelay, score, stormsSurvived } from '../engine/game'
 import { cards } from '../engine/cards'
-import type { BadgeId, GameState, Loss, Mode } from '../engine/types'
+import { flareById } from '../engine/flares'
+import type { BadgeId, DayRecord, GameState, Loss, Mode } from '../engine/types'
 import { OrbiFace } from './art'
 import { METERS } from './base'
 import { Celebrate, CountUp } from './motion'
 import { sfx } from './sfx'
 import { Speak } from './speech'
+import { when } from './sunscreens'
 
 export const NASA_NOTE = 'ASTRA uses NASA data. It is not made or endorsed by NASA.'
 const percent = (x: number) => Math.round(x * 100)
@@ -87,7 +89,7 @@ export function ChoosePlace({ onPick, onBack }: { onPick: (siteId: string) => vo
         Back
       </button>
       <h2>Choose a place</h2>
-      <p className="muted">NASA’s 9 candidate landing regions near the Moon’s South Pole. Sunlight and Earth views come from NASA Moon maps.</p>
+      <p className="muted">NASA’s 9 candidate landing regions near the Moon’s South Pole. Sun and Earth views are for the best spot near each region, from NASA Moon maps.</p>
       <div className="choices">
         {sites.map((s) => (
           <button key={s.id} className="choice" onClick={() => onPick(s.id)}>
@@ -132,15 +134,14 @@ export function ChooseMode({ onPick, onBack }: { onPick: (m: Mode) => void; onBa
 
 /* ---------- Day report ---------- */
 
-function RadioCall({ game, day }: { game: GameState; day: number }) {
+function RadioCall({ r }: { r: DayRecord }) {
   const d = radioDelay()
   const [heard, setHeard] = useState(false)
   useEffect(() => {
     const t = setTimeout(() => setHeard(true), d.roundTripS * 1000)
     return () => clearTimeout(t)
   }, [d.roundTripS])
-  const look = MODES[game.mode].lookahead
-  const coming = game.storms.filter((p) => p.arrivalDay > day && p.arrivalDay <= day + look)
+  const sent = Math.min(RADIO_SCIENCE_MAX, r.jobs.radio) * RADIO_SCIENCE
   return (
     <section className="call" aria-label="Radio call to Earth" aria-live="polite">
       <div className="row">
@@ -154,13 +155,9 @@ function RadioCall({ game, day }: { game: GameState; day: number }) {
             <i style={{ ['--t' as string]: `${d.roundTripS}s` }} />
           </div>
         </>
-      ) : coming.length > 0 ? (
-        <p>
-          Mission Control: “A storm is coming on day {coming[0]?.arrivalDay}.” The answer took {d.roundTripS.toFixed(2)} seconds.
-        </p>
       ) : (
         <p>
-          Mission Control: “No storm in the next {look} days.” The answer took {d.roundTripS.toFixed(2)} seconds.
+          Mission Control: “Data received. Thank you!” +{sent} science. The answer took {d.roundTripS.toFixed(2)} seconds.
         </p>
       )}
       <p className="fineprint">{d.source}</p>
@@ -168,10 +165,60 @@ function RadioCall({ game, day }: { game: GameState; day: number }) {
   )
 }
 
+/** New flares in the Sun Watch, and what really happened after the flares the player was watching. All from NASA's records. */
+function FlareNews({ r }: { r: DayRecord }) {
+  if (r.reported.length === 0 && r.resolved.length === 0) return null
+  return (
+    <section className="card stack" aria-label="Flare news">
+      {r.reported.map((id) => {
+        const f = flareById(id)
+        return f ? (
+          <p key={`new-${id}`}>
+            <b>New in the Sun Watch:</b> a real {f.class} flare on {when(f.peakTime)}. {f.cloud ? 'It sent out a gas cloud.' : 'No gas cloud was seen.'} Watch the next 3 days.
+          </p>
+        ) : null
+      })}
+      {r.resolved.map(({ flareId, followed }) => {
+        const f = flareById(flareId)
+        if (!f) return null
+        return (
+          <p key={`res-${flareId}`}>
+            <b>Result:</b> the {f.class} flare of {when(f.peakTime)} {followed ? 'did bring space rays' : 'did not bring space rays'}.{' '}
+            <a href={followed && f.sep ? f.sep.link : f.link} target="_blank" rel="noreferrer">
+              NASA record
+            </a>
+          </p>
+        )
+      })}
+    </section>
+  )
+}
+
 function StormPanel({ game, index }: { game: GameState; index: number }) {
   const plan = game.storms[index]
   const data = storms.find((s) => s.id === plan?.stormId)
-  if (!plan || !data) return null
+  if (!plan) return null
+  if (!data) {
+    // A real storm whose size is not in our data: show only what NASA recorded.
+    const fe = game.flares.find((f) => f.stormIndex === index)
+    const own = fe && flareById(fe.flareId)
+    return (
+      <section className="stormcard" aria-label="Real storm">
+        <span className="row">
+          <Radiation size={22} color="var(--radiation)" aria-hidden="true" />
+          <b>A real storm from NASA’s records</b>
+        </span>
+        <p className="big">Space rays after a {own?.class ?? ''} flare</p>
+        <p>NASA recorded a radiation storm after the flare on {own ? when(own.peakTime) : 'this day'}.</p>
+        <p className="fineprint">We do not have this storm’s size, so the game uses a small storm.</p>
+        {own?.sep && (
+          <a href={own.sep.link} target="_blank" rel="noreferrer">
+            NASA radiation storm record
+          </a>
+        )}
+      </section>
+    )
+  }
   return (
     <section className="stormcard" aria-label="Real storm">
       <span className="row">
@@ -192,7 +239,7 @@ function StormPanel({ game, index }: { game: GameState; index: number }) {
   )
 }
 
-const LABEL: Record<Loss, string> = { air: 'Air', power: 'Power', radiation: 'Radiation', food: 'Food' }
+const LABEL: Record<Loss, string> = { air: 'Air', power: 'Power', radiation: 'Radiation', food: 'Food', science: 'Science' }
 
 /** "Air went from 80 to 64." or, when nothing changed, "Air stayed at 100." */
 export function changeLine(label: string, a: number, b: number): string {
@@ -224,7 +271,13 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
         </span>
       </div>
       {r.storm && <StormPanel game={game} index={r.storm.index} />}
-      {r.radioWorked && <RadioCall game={game} day={r.day} />}
+      <FlareNews r={r} />
+      {r.radioWorked && <RadioCall r={r} />}
+      {r.walk !== 'none' && (
+        <p>
+          {r.calledHome ? 'A storm called the walkers home. The walk’s science was lost.' : `The ${r.walk} walk brought home ${r.walkScience} science.`}
+        </p>
+      )}
       <ul className="list">
         {METERS.filter((m) => m.key !== 'food' || game.hasFood).map(({ key, Icon, color }, i) => (
           <li key={key} className="change">
@@ -237,12 +290,11 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
           </li>
         ))}
       </ul>
-      {card && r.went && (
+      {card && (
         <p>
-          You went out: {card.question.replace(/\?$/, '')}. {card.science > 0 ? `+${card.science} science.` : ''}
+          You chose: {(r.went ? card.a : card.b).label}
         </p>
       )}
-      {card && !r.went && <p className="muted">You stayed in. The crew is safe.</p>}
       <button className="primary" onClick={onNext}>
         {next}
       </button>

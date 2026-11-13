@@ -1,6 +1,7 @@
 import consumables from '../data/consumables.json'
 import science from '../data/science.json'
 import sites from '../data/sites.json'
+import flareStats from '../data/flareStats.json'
 import sources from '../data/sources.json'
 import storms from '../data/storms.json'
 import { MODES, RADIO_SOURCE } from '../engine/constants'
@@ -62,7 +63,24 @@ export function DataPage({ onBack }: { onBack: () => void }) {
       </details>
 
       <details>
+        <summary>How often flares bring space rays</summary>
+        <div className="datum">
+          <span>
+            In real life most flares bring no rays: {flareStats.total.followed} of {flareStats.total.n} big flares (M5 or bigger) were followed by space rays within 3 days. In the game each hand has about half of each, so you can practise.
+          </span>
+          <span className="src">Rule: {flareStats.rule}</span>
+          <span className="src">Source: {flareStats.source}</span>
+        </div>
+        {[...flareStats.buckets, ...flareStats.clues].map((b) => (
+          <Datum key={b.id} label={b.label} value={`${b.followed} of ${b.n} (${b.percent}%)`} source="NASA DONKI archive, counted by us" />
+        ))}
+      </details>
+
+      <details>
         <summary>The 9 places</summary>
+        <p className="fineprint" style={{ padding: '4px 0 8px' }}>
+          Best-lit spot within 5 km of each region (LRO LOLA, 18.6-year average).
+        </p>
         {sites.map((s) => (
           <div key={s.id}>
             <Datum label={`${s.name}, sunlight`} value={`${(s.sunShare.value * 100).toFixed(1)}% of days`} source={s.sunShare.source} />

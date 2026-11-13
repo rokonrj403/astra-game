@@ -27,7 +27,7 @@ describe('the storm multiplier changes the game, never the displayed data', () =
     const rawBefore = structuredClone(storms)
     for (const site of sites) {
       for (let seed = 1; seed <= 10; seed++) {
-        for (const bot of [bots.smart, bots.idle]) playBot(bot, { mode: 'commander', siteId: site.id, seed })
+        for (const bot of [bots.smart, bots.neverShield]) playBot(bot, { mode: 'commander', siteId: site.id, seed })
       }
     }
     expect(shown()).toEqual(before)
@@ -53,9 +53,11 @@ describe('the storm multiplier changes the game, never the displayed data', () =
     let checked = 0
     for (const site of sites) {
       for (let seed = 1; seed <= 40; seed++) {
-        const g = playBot(bots.idle, { mode: 'commander', siteId: site.id, seed })
+        const g = playBot(bots.neverShield, { mode: 'commander', siteId: site.id, seed })
         if (g.status !== 'lost' || g.loss !== 'radiation') continue
-        const data = storms.find((s) => s.id === g.storms[g.history[g.history.length - 1]!.storm!.index]!.stormId)!
+        // Storms of unknown size have no title or dates in our data; they are explained from their own flare (tested in game.test.ts).
+        const data = storms.find((s) => s.id === g.storms[g.history[g.history.length - 1]!.storm!.index]!.stormId)
+        if (!data) continue
         const text = explain(g).steps.map((x) => x.text).join(' ')
         expect(text).toContain(data.title)
         expect(text).toContain(data.dates)
@@ -76,6 +78,6 @@ describe('mode cards', () => {
   it('card lines match the real settings', () => {
     expect(MODES.commander.stormBoost).toBeGreaterThan(MODES.cadet.stormBoost)
     expect(MODE_CARDS.commander.lines).toContain(`${MODES.commander.days} days`)
-    expect(MODE_CARDS.commander.lines).toContain('Two storms')
+    expect(MODE_CARDS.commander.lines).toContain('Two real storms')
   })
 })

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import consumables from './consumables.json'
 import sites from './sites.json'
@@ -95,6 +97,40 @@ describe('real data files', () => {
   })
 })
 
+describe('site sunlight and Earth view: the best spot within 5 km of each region (LRO LOLA, 18.6-year average)', () => {
+  const site = (id: string) => sites.find((s) => s.id === id)!
+
+  it('pins the values the lead chose: Malapert Massif sun about 85% and Earth 100%, Slater Plain Earth about 49.9%', () => {
+    expect(site('region-3').name).toBe('Malapert Massif')
+    expect(site('region-3').sunShare.value).toBeCloseTo(0.845, 3)
+    expect(site('region-3').earthShare.value).toBe(1)
+    expect(site('region-9').name).toBe('Slater Plain')
+    expect(site('region-9').earthShare.value).toBeCloseTo(0.499, 3)
+  })
+
+  it('names the column and the 18.6-year average in every source string', () => {
+    for (const s of sites) {
+      expect(s.sunShare.source).toContain('sun_max_5km')
+      expect(s.earthShare.source).toContain('earth_max_5km')
+      expect(s.sunShare.source).toContain('18.6-year average')
+      expect(s.earthShare.source).toContain('18.6-year average')
+    }
+  })
+
+  const csv = join(import.meta.dirname, '../../../nasa-space-apps-2026/data/raw/lola/regions_lola.csv')
+  it.skipIf(!existsSync(csv))('matches the LOLA csv in the prep repo, column by column', () => {
+    const [head, ...rows] = readFileSync(csv, 'utf8').trim().split(/\r?\n/)
+    const cols = head!.split(',')
+    for (const line of rows) {
+      const cells = line.split(',')
+      const row = Object.fromEntries(cols.map((c, i) => [c, cells[i]]))
+      const s = site(`region-${row.id}`)
+      expect(s.sunShare.value).toBe(Number(row.sun_max_5km))
+      expect(s.earthShare.value).toBe(Number(row.earth_max_5km))
+    }
+  })
+})
+
 describe('flare watch data (real flares and what followed them)', () => {
   const flares = flareSet.flares
   const yes = flares.filter((f) => f.followed)
@@ -118,12 +154,17 @@ describe('flare watch data (real flares and what followed them)', () => {
     expect(new Set(flares.map((f) => f.id)).size).toBe(flares.length)
   })
 
-  it('the flares followed by space rays are exactly the 8 real storms, each with its own NASA radiation record', () => {
-    expect(yes.map((f) => f.stormId).sort()).toEqual(storms.map((s) => s.id).sort())
-    for (const f of yes) {
+  it('every flare followed by space rays has its own NASA radiation record; exactly 8 of them are our real storms with a known size', () => {
+    expect(yes).toHaveLength(98)
+    const known = yes.filter((f) => f.sizeKnown)
+    expect(known.map((f) => f.stormId).sort()).toEqual(storms.map((s) => s.id).sort())
+    for (const f of yes.filter((x) => !x.sizeKnown)) expect(f.stormId).toBeNull()
+    for (const f of known) {
       const storm = storms.find((s) => s.id === f.stormId)!
       expect(storm.flare.value).toBe(f.class)
       expect(storm.records.some((r) => r.url === f.link)).toBe(true)
+    }
+    for (const f of yes) {
       expect(f.sep).not.toBeNull()
       expect(f.sep!.link).toMatch(/^https:\/\/ccmc\.gsfc\.nasa\.gov\/DONKI\/view\/SEP\/\d+\/-1$/)
       expect(f.sep!.instrument).toMatch(/GOES.*>10 MeV/)
@@ -164,11 +205,11 @@ describe('flare watch data (real flares and what followed them)', () => {
     expect(b.x5!.percent).toBeLessThan(100)
   })
 
-  it('the pool leaves out only followed flares that are not our storms, and says how many', () => {
-    const notUsed = flareStats.total.followed - yes.length
-    expect(notUsed).toBe(90)
-    expect(flareSet.note).toContain(`(${notUsed})`)
-    expect(no.length + notUsed + yes.length).toBe(flareStats.total.n)
+  it('the pool keeps every real flare of M5 or bigger, and the note says how many storms have an unknown size', () => {
+    expect(no.length + yes.length).toBe(flareStats.total.n)
+    expect(yes.length).toBe(flareStats.total.followed)
+    expect(flareSet.note).toContain('for the other 90')
+    expect(flareSet.note).toContain('small storm')
   })
 
   it('every flare carries real clues: size, gas cloud (a linked CME) and Sun side, with its DONKI source location', () => {
@@ -178,7 +219,8 @@ describe('flare watch data (real flares and what followed them)', () => {
       expect(f.location).toMatch(/^[NS]\d+[EW]\d+$/)
       expect(f.side).toBe(f.location!.includes('W') ? 'west' : 'east')
     }
-    for (const f of yes) expect(f.cloud).toBe(true) // all 8 real storms came with a real gas cloud
+    for (const f of yes.filter((x) => x.sizeKnown)) expect(f.cloud).toBe(true) // all 8 real storms came with a real gas cloud
+    expect(yes.some((f) => !f.cloud)).toBe(true) // but some real flares with no cloud also brought rays: clues help, they do not decide
   })
 
   it('the clue statistics match an independent count of the DONKI archive', () => {

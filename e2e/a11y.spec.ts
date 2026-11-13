@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('every child screen passes the axe scan', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await scan(page, 'start')
   await page.getByRole('button', { name: 'Play' }).click()
   await scan(page, 'place')

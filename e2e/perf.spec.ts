@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function toPlay(page: Page, pause = 0) {
-  await page.goto('/')
+  await page.goto('./')
   await page.waitForTimeout(pause)
   await page.getByRole('button', { name: 'Play' }).click()
   await page.waitForTimeout(pause)

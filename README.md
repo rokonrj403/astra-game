@@ -10,7 +10,7 @@ ASTRA is a Moon-base trainer for children 7 to 12. You run a base near the Moon'
 
 ASTRA uses NASA data. It is not made or endorsed by NASA.
 
-**Live:** _URL to come_
+**Live:** https://rokonrj403.github.io/astra-game/
 
 ---
 

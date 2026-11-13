@@ -43,11 +43,12 @@ const BUDGET: Record<string, number> = {
   '17-journal': 12,
 }
 
+const SHOTS = process.env.ASTRA_SHOTS ?? 'e2e-shots' // live runs use e2e-shots/live
 // The word count of every screen the phone check visits, written to e2e-shots/words.json for the string audit.
 const wordLog: { screen: string; words: number }[] = []
 test.afterAll(() => {
   try {
-    writeFileSync('e2e-shots/words.json', JSON.stringify(wordLog, null, 2))
+    writeFileSync(`${SHOTS}/words.json`, JSON.stringify(wordLog, null, 2))
   } catch {
     /* the folder only exists after a run */
   }
@@ -69,7 +70,7 @@ async function audit(page: Page, name: string) {
   wordLog.push({ screen: name, words })
   const key = name.replace(/-cmd$/, '') // Commander frames use the same budgets as the Cadet ones
   if (BUDGET[key] !== undefined) expect(words, `${name} has ${words} visible words`).toBeLessThanOrEqual(BUDGET[key])
-  await page.screenshot({ path: `e2e-shots/${name}.png`, fullPage: true })
+  await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true })
   if (FILLS.has(key)) {
     const lowest = await page.evaluate(() => {
       let max = 0
@@ -133,7 +134,7 @@ async function give(page: Page, id: string, label: string, n = 1) {
 }
 
 async function toBase(page: Page, mode: 'Cadet' | 'Commander') {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Play' }).click()
   await audit(page, '02-place')
   await page.getByRole('button', { name: /Malapert Massif/ }).click()
@@ -143,7 +144,7 @@ async function toBase(page: Page, mode: 'Cadet' | 'Commander') {
 }
 
 test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await audit(page, '01-start')
   await toBase(page, 'Commander')
   await expect(page.getByLabel('Day 1 of 20')).toBeVisible()
@@ -179,7 +180,7 @@ test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async (
 })
 
 test('the Flare Journal fits the phone and is stickers, not sentences', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Flare Journal' }).click()
   await expect(page.getByRole('heading', { name: 'Flare Journal' })).toBeVisible()
   await audit(page, '17-journal')
@@ -190,7 +191,7 @@ test('the Flare Journal fits the phone and is stickers, not sentences', async ({
 })
 
 test('settings and for-teachers fit', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Settings' }).click()
   await audit(page, '15-settings')
   await page.getByRole('button', { name: 'Back' }).click()

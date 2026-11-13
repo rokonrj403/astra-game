@@ -4,7 +4,7 @@ test('after one visit the game loads and plays with no network at all', async ({
   await page.addInitScript(() => {
     Math.random = () => 0.5
   })
-  await page.goto('/')
+  await page.goto('./')
   // Wait until the service worker has cached the whole game (30 files: pages, art, fonts, data).
   await page.waitForFunction(async () => {
     await navigator.serviceWorker.ready

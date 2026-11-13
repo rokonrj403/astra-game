@@ -612,7 +612,7 @@ describe('building the scene from the real game', () => {
     const rays = revealFromRecord({ ...base, storm: { index: 0, factor: 1, shield: 3, letsThrough: 0.35, incoming: 120, warned: true } }, 'west')
     expect(rays).toMatchObject({ kind: 'rays', shield: 3, side: 'west' })
     expect(rays?.count).toBeGreaterThan(12)
-    expect(revealFromRecord({ ...base, storm: null, resolved: [{ flareId: 'x', followed: false }], shieldAfter: 2 })).toMatchObject({ kind: 'clear', shield: 2 })
+    expect(revealFromRecord({ ...base, storm: null, resolved: [{ flareId: 'x', followed: false, guess: null, reward: 0 }], shieldAfter: 2 })).toMatchObject({ kind: 'clear', shield: 2 })
     expect(revealFromRecord({ ...base, storm: null })).toBeNull()
     expect(revealFromRecord(undefined)).toBeNull()
   })

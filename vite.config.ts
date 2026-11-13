@@ -32,5 +32,5 @@ const pwa = VitePWA({
 export default defineConfig({
   base: './',
   plugins: [react(), ...(process.env.VITEST ? [] : [pwa])],
-  test: { environment: 'jsdom', globals: false, include: ['src/**/*.test.{ts,tsx}'] },
+  test: { environment: 'jsdom', globals: false, include: ['src/**/*.test.{ts,tsx}'], setupFiles: ['./src/test-setup.ts'] },
 })

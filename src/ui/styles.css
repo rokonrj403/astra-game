@@ -1331,3 +1331,74 @@ button:active:not(:disabled) {
   flex: none;
   min-width: 48px;
 }
+
+/* Living base screen: one scene, meters, power tray and a Next button, all inside a 360x740 phone with no scrolling. */
+.living {
+  gap: 6px;
+  padding: 8px 12px 0;
+  min-height: 100dvh;
+}
+.livetop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+.daynum {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--sun);
+}
+.living .sticky-cta {
+  position: static;
+  margin: auto -12px 0;
+  padding: 6px 12px calc(10px + env(safe-area-inset-bottom));
+  background: none;
+}
+.living .sticky-cta .big {
+  min-height: 64px;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.fx {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.fx > span {
+  display: inline-flex;
+  align-items: center;
+}
+.cap {
+  font-weight: 700;
+}
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* The bubble rides the ground band under the buildings, so the buildings (the drop targets) and the Sun stay uncovered. */
+.living .sc-bubble {
+  left: 8px !important;
+  width: calc(100% - 16px) !important;
+  top: auto !important;
+  bottom: 6px !important;
+  padding: 6px 8px;
+}
+.living .sc-bubble .sc-tail {
+  display: none;
+}
+.living .sc-bubble-body {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.living .sc-bubble .cap {
+  flex: 1;
+  text-align: left;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}

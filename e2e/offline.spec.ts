@@ -22,14 +22,15 @@ test('after one visit the game loads and plays with no network at all', async ({
   await page.getByRole('button', { name: /Malapert Massif/ }).click()
   await page.getByRole('button', { name: 'Go' }).click()
   await page.getByRole('button', { name: /Cadet/ }).click()
-  await expect(page.getByText('Day 1 of 10')).toBeVisible()
+  await expect(page.getByLabel('Day 1 of 10')).toBeVisible()
 
   // The art loaded from the cache, and Today's Sun is honest about having no network.
   const broken = await page.evaluate(() => [...document.images].filter((i) => !i.complete || i.naturalWidth === 0).map((i) => i.alt))
   expect(broken, 'pictures that did not load offline').toEqual([])
   await expect(page.getByRole('button', { name: /Today's Sun, SAVED/ })).toBeVisible()
 
-  await page.getByRole('button', { name: 'More blocks for Air' }).click()
+  await page.getByRole('button', { name: /^Air, [0-9]+ blocks?$/ }).click()
+  await page.getByRole('button', { name: 'More blocks, air' }).click()
   await page.getByRole('button', { name: 'Next day' }).click()
   await expect(page.getByRole('heading', { name: 'Day 1' })).toBeVisible()
 

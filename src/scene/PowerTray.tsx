@@ -1,3 +1,4 @@
+import { Zap } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Target } from './model'
 import { useReducedMotion } from './motion'
@@ -138,7 +139,9 @@ export function PowerTray({ blocks, total = 6, resolve, centerOf, onDrop, onHove
                 onPointerUp={up}
                 onPointerCancel={cancel}
               >
-                <i aria-hidden="true" />
+                <i aria-hidden="true">
+                  <Zap size={28} strokeWidth={3} color="#7a4a00" />
+                </i>
               </button>
             )}
           </span>

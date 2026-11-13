@@ -105,7 +105,7 @@ export function Sun({ x, y, sunny, warn = false, flare = null, showSide = false,
   const fill = warn || flare ? PAL.warn : PAL.sun
   const body = (
     <>
-      <circle className="sc-breathe" r={SUN_R + 14} fill={warn || flare ? PAL.warn : '#FFD36B'} opacity={sunny ? 0.4 : 0.1} />
+      <circle className="sc-breathe" r={SUN_R + 14} fill="#FFD36B" opacity={sunny ? 0.35 : 0.1} />
       <circle r={SUN_R} fill={fill} opacity={sunny ? 1 : 0.55} />
       {!sunny && (
         // A dim Sun is also marked by stripes across it, not by colour alone.

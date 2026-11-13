@@ -5,17 +5,17 @@ import type { Choice, GameState, Mode } from '../engine/types'
 import { addPlayed, type JournalEntry } from '../engine/journal'
 import { loadSun, type SunView } from '../live/sun'
 import { browserStore, readJSON, writeJSON } from '../live/store'
-import { Base } from './base'
+import { Living } from './living'
 import { DataPage } from './DataPage'
 import { Journal } from './journal'
 import { Settings, Teachers } from './pages'
 import { setSoundEnabled, sfx } from './sfx'
-import { ChooseMode, ChoosePlace, Complete, Report, Start, Why } from './screens'
+import { ChooseMode, ChoosePlace, Complete, Start, Why } from './screens'
 import { loadPrefs, PrefsContext, savePrefs, type Prefs } from './speech'
 import { StormCards, SunScreen } from './sunscreens'
 import { TwinHost } from './twin'
 
-type Screen = 'start' | 'place' | 'mode' | 'play' | 'report' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers' | 'journal'
+type Screen = 'start' | 'place' | 'mode' | 'play' | 'why' | 'end' | 'data' | 'sun' | 'cards' | 'settings' | 'teachers' | 'journal'
 const OVERLAYS: Screen[] = ['data', 'sun', 'cards', 'settings', 'teachers', 'journal']
 const CARDS_KEY = 'astra-cards-v1'
 const JOURNAL_KEY = 'astra-journal-v1'
@@ -65,8 +65,8 @@ export function App() {
     setScreen('play')
   }
 
-  const share = (choice: Choice) => {
-    if (!game) return
+  const share = (choice: Choice): GameState => {
+    if (!game) throw new Error('no game')
     const next = step(game, choice, makeRng(game.seed * 31 + game.day))
     setGame(next)
     // What the child just learned goes into the Flare Journal, with their guess.
@@ -82,12 +82,12 @@ export function App() {
       setMet(all)
       writeJSON(browserStore(), CARDS_KEY, all)
     }
-    setScreen('report')
+    return next
   }
 
-  const afterReport = () => {
+  const over = () => {
     if (!game) return
-    setScreen(game.status === 'playing' ? 'play' : game.status === 'lost' ? 'why' : 'end')
+    setScreen(game.status === 'lost' ? 'why' : 'end')
   }
 
   const overlay = OVERLAYS.includes(screen)
@@ -122,9 +122,6 @@ export function App() {
       break
     case 'mode':
       other = <ChooseMode onBack={() => setScreen('place')} onPick={begin} />
-      break
-    case 'report':
-      other = game ? <Report game={game} onNext={afterReport} /> : null
       break
     case 'why':
       other = game ? <Why game={game} onNext={() => setScreen('end')} onData={() => open('data')} /> : null
@@ -161,7 +158,7 @@ export function App() {
       <div onClickCapture={(e) => (e.target as HTMLElement).closest('button') && sfx.tap()}>
         {keepBase && game && (
           <div hidden={screen !== 'play'}>
-            <Base key={game.day} game={game} sun={sun} onShare={share} onData={() => open('data')} onSun={() => open('sun')} />
+            <Living key={game.seed} game={game} sun={sun} onStep={share} onOver={over} onData={() => open('data')} onSun={() => open('sun')} />
           </div>
         )}
         {other}

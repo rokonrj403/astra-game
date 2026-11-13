@@ -324,7 +324,7 @@ function FlareNews({ r, game }: { r: DayRecord; game: GameState }) {
 }
 
 /** The day, as pictures: every bar with an up, down or same arrow, a walk result, science earned. The sentences are for screen readers and reading aloud. */
-export function Report({ game, onNext }: { game: GameState; onNext: () => void }) {
+export function DaySummary({ game }: { game: GameState }) {
   const r = game.history[game.history.length - 1]
   const stormToday = r?.storm != null
   const reportDay = r?.day
@@ -340,7 +340,7 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
   })
   const sentences = rows.map((x) => x.line).join(' ')
   return (
-    <main className="app report">
+    <div className="daysummary">
       <div className="row between">
         <h2>Day {r.day}</h2>
         <span className="row">
@@ -375,10 +375,26 @@ export function Report({ game, onNext }: { game: GameState; onNext: () => void }
         )}
       </div>
 
-      <button className="primary big" onClick={onNext} aria-label={game.status === 'won' ? 'Finish the mission' : game.status === 'lost' ? 'See what happened' : 'Next day'}>
-        <ArrowRight size={26} aria-hidden="true" /> Next
-      </button>
+    </div>
+  )
+}
+
+/** The day report as a page: the summary and a Next button. */
+export function Report({ game, onNext }: { game: GameState; onNext: () => void }) {
+  return (
+    <main className="app report">
+      <DaySummary game={game} />
+      <NextButton game={game} onNext={onNext} />
     </main>
+  )
+}
+
+/** One big Next button. Named for what it does: next day, see what happened, or finish the mission. */
+export function NextButton({ game, onNext }: { game: GameState; onNext: () => void }) {
+  return (
+    <button className="primary big" onClick={onNext} aria-label={game.status === 'won' ? 'Finish the mission' : game.status === 'lost' ? 'See what happened' : 'Next day'}>
+      <ArrowRight size={26} aria-hidden="true" /> Next
+    </button>
   )
 }
 

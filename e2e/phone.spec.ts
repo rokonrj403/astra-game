@@ -27,7 +27,11 @@ const BUDGET: Record<string, number> = {
   '01-start': 12,
   '02-place': 12,
   '03-mode': 12,
+  '04-base-day1': 12,
+  '05-base-blocks': 12,
   '06-sun-saved': 12,
+  '09-play-guess': 12,
+  '09b-play-storm': 12,
   '08-report': 12,
   '10-report-storm': 12,
   '11-report-radio': 12,
@@ -67,6 +71,7 @@ async function audit(page: Page, name: string) {
     for (const el of document.querySelectorAll<HTMLElement>('body *')) {
       const cs = getComputedStyle(el)
       if (cs.display === 'none' || cs.visibility === 'hidden') continue
+      if (el instanceof SVGElement && el.tagName.toLowerCase() !== 'svg') continue // parts of a picture are clipped by it
       const b = el.getBoundingClientRect()
       if (b.width === 0 || b.height === 0) continue
       const label = `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''} "${(el.textContent ?? '').trim().slice(0, 28)}"`
@@ -97,6 +102,16 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/DONKI-API/**', (r) => r.abort())
 })
 
+/** Put n power blocks on a building: tap it, then its + sign. */
+async function give(page: Page, id: string, label: string, n = 1) {
+  const building = page.getByRole('button', { name: new RegExp('^' + label + ', [0-9]+ blocks?$') })
+  const more = page.getByRole('button', { name: 'More blocks, ' + id })
+  for (let i = 0; i < n; i++) {
+    if (!(await more.isVisible())) await building.click()
+    await more.click()
+  }
+}
+
 async function toBase(page: Page, mode: 'Cadet' | 'Commander') {
   await page.goto('/')
   await page.getByRole('button', { name: 'Play' }).click()
@@ -111,31 +126,26 @@ test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async (
   await page.goto('/')
   await audit(page, '01-start')
   await toBase(page, 'Commander')
-  await expect(page.getByText('Day 1 of 20')).toBeVisible()
+  await expect(page.getByLabel('Day 1 of 20')).toBeVisible()
   await audit(page, '04-base-day1')
 
-  // One screen of scrolling: the longest base screen (Commander, Day 1, with a choice card) is at most 2 screens tall,
-  // and "Next day" is on screen without scrolling.
+  // The play screen is ONE screen: the scene, bars, power tray and Next all fit 740px at 360 wide, with no scrolling.
   const height = await page.evaluate(() => document.documentElement.scrollHeight)
-  // TEMPORARY (redesign step 1): the new flare watch, goal bar and walk selector make the base screen about 2.5 screens tall. Build step 3
-  // (one decision per screen) brings this back to 1480.
-  expect(height, `base screen is ${height}px tall`).toBeLessThanOrEqual(1900)
+  expect(height, `play screen is ${height}px tall`).toBeLessThanOrEqual(740)
   const next = await page.getByRole('button', { name: 'Next day' }).boundingBox()
   expect(next && next.y + next.height, 'Next day is visible without scrolling').toBeLessThanOrEqual(740)
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-  const bottom = await page.getByRole('button', { name: 'Next day' }).boundingBox()
-  expect(bottom && bottom.y + bottom.height, 'Next day stays visible at the bottom of the page').toBeLessThanOrEqual(740)
-  await page.evaluate(() => window.scrollTo(0, 0))
+  const tray = await page.locator('.sc-tray').boundingBox()
+  expect(tray && tray.y, 'the power tray is in the lower half (thumb zone)').toBeGreaterThan(370)
 
-  await page.getByRole('button', { name: 'More blocks for Air' }).click()
-  await page.getByRole('button', { name: 'More blocks for Shield' }).click()
+  await give(page, 'air', 'Air')
+  await give(page, 'shield', 'Shield')
   await audit(page, '05-base-blocks')
 
   await page.getByRole('button', { name: /Today's Sun, SAVED/ }).click()
   await expect(page.locator('[data-status="SAVED"]')).toBeVisible()
   await audit(page, '06-sun-saved')
   await page.getByRole('button', { name: 'Back' }).click()
-  await expect(page.getByText('4 left')).toBeVisible() // the blocks were kept
+  await expect(page.locator('.sc-tray')).toHaveAttribute('data-blocks', '4') // the blocks were kept
 
   await page.getByRole('button', { name: /Data/ }).click()
   for (const s of await page.locator('summary').all()) await s.click()
@@ -143,6 +153,7 @@ test('every screen fits a 360x740 phone: setup, base, sun, cards, data', async (
   await page.getByRole('button', { name: 'Back' }).click()
 
   await page.getByRole('button', { name: 'Next day' }).click()
+  await page.locator('.daysummary').waitFor()
   await audit(page, '08-report')
 })
 
@@ -167,38 +178,16 @@ test('settings and for-teachers fit', async ({ page }) => {
   await audit(page, '16-teachers')
 })
 
-test('the storm, radio call, why-it-happened, end and card screens fit', async ({ page }) => {
+test('a full day, the storm, radio call, why-it-happened, end and card screens fit', async ({ page }) => {
   await toBase(page, 'Cadet')
   const seen = new Set<string>()
-  for (let guard = 0; guard < 40; guard++) {
+  for (let guard = 0; guard < 80; guard++) {
     if (await page.getByRole('heading', { name: /Mission complete|Rescue ship/ }).isVisible()) break
     if (await page.getByRole('group', { name: 'Why it happened' }).isVisible()) {
       await audit(page, '12-why')
       await page.getByRole('button', { name: 'See my mission' }).click()
-    } else if (await page.getByRole('button', { name: 'See what happened' }).isVisible()) {
-      await page.getByRole('button', { name: 'See what happened' }).click()
-    } else if (await page.getByRole('button', { name: 'Finish the mission' }).isVisible()) {
-      await page.getByRole('button', { name: 'Finish the mission' }).click()
-    } else if (await page.getByText('Share power', { exact: true }).first().isVisible()) {
-      for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'More blocks for Air' }).click()
-      for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'More blocks for Shield' }).click()
-      const radio = page.getByRole('button', { name: 'More blocks for Radio' })
-      if (await radio.isEnabled()) await radio.click()
-      if (await page.getByRole('alert').isVisible()) {
-        if (!seen.has('alert')) {
-          await audit(page, '09-base-storm-alert')
-          // HARD RULE: the flare watch is pictures. Three words at most.
-          expect(await countWords(page, '[aria-label="Flare watch"]'), 'flare watch words').toBeLessThanOrEqual(3)
-        }
-        seen.add('alert')
-        if (!seen.has('now') && (await page.getByRole('alert').textContent())?.includes('Storm today')) {
-          seen.add('now')
-          await audit(page, '09b-base-storm-now')
-        }
-      }
-      await page.getByRole('button', { name: 'Next day' }).click()
-    } else {
-      // A report screen. Audit the first one that shows a radio call and the first one that shows a real storm.
+    } else if (await page.locator('.daysummary').isVisible()) {
+      // The summary after a day. Audit the first one that shows a real storm and the first that shows a radio call.
       if ((await page.getByLabel('Real storm').count()) > 0 && !seen.has('storm')) {
         seen.add('storm')
         await audit(page, '10-report-storm')
@@ -209,6 +198,20 @@ test('the storm, radio call, why-it-happened, end and card screens fit', async (
         await audit(page, '11-report-radio')
       }
       await page.getByRole('button', { name: /Next day|See what happened|Finish the mission/ }).click()
+    } else if (await page.locator('.sc-tray').isVisible()) {
+      await give(page, 'air', 'Air', 3)
+      await give(page, 'shield', 'Shield', 2)
+      if (await page.getByRole('group', { name: 'ORBI asks' }).isVisible()) {
+        if (!seen.has('guess')) await audit(page, '09-play-guess')
+        seen.add('guess')
+        // The play screen stays inside the phone on every day, whatever card or flare it has.
+        expect(await page.evaluate(() => document.documentElement.scrollHeight), 'play screen height with a flare').toBeLessThanOrEqual(740)
+      }
+      const shown = await page.evaluate(() => [...document.querySelectorAll('main')].filter((m) => !m.closest('[hidden]')).map((m) => (m as HTMLElement).innerText.replace(/\s+/g, ' ')).join(' | '))
+      expect(await countWords(page), `visible words on a play screen: ${shown}`).toBeLessThanOrEqual(12)
+      await page.getByRole('button', { name: 'Next day' }).click()
+    } else {
+      await page.waitForTimeout(150) // the time-lapse is playing
     }
   }
   await audit(page, '13-end')

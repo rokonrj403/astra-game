@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { newGame } from '../engine/game'
 import { App } from './App'
-import { Base } from './base'
+import { Living } from './living'
 
 // No test touches the real network: NASA is "offline", so Today's Sun is SAVED.
 beforeEach(() => {
@@ -27,6 +27,26 @@ function startGame(mode: 'Cadet' | 'Commander') {
   tap('Go')
   tap(new RegExp(mode))
 }
+
+
+const building = (label: string) => screen.getByRole('button', { name: new RegExp('^' + label + ', [0-9]+ blocks?$') })
+/** Put n power blocks on a building (tap the building, then its + sign). */
+function give(id: string, label: string, n = 1) {
+  for (let i = 0; i < n; i++) {
+    if (!screen.queryByRole('button', { name: 'More blocks, ' + id })) fireEvent.click(building(label))
+    fireEvent.click(screen.getByRole('button', { name: 'More blocks, ' + id }))
+  }
+}
+const blocksLeft = () => Number(document.querySelector('.sc-tray')!.getAttribute('data-blocks'))
+const NEXT = /^(Next day|See what happened|Finish the mission)$/
+/** Play one day: set the blocks, press Next, wait for the time-lapse, read the summary, press its button. */
+async function playDay(setup?: () => void) {
+  setup?.()
+  tap('Next day')
+  await waitFor(() => expect(document.querySelector('.daysummary')).not.toBeNull(), { timeout: 4000 })
+  tap(NEXT)
+}
+const over = () => screen.queryByRole('group', { name: 'Why it happened' }) || screen.queryByRole('heading', { name: /Mission complete|Rescue ship/ })
 
 describe('screens', () => {
   it('the start screen is a picture and a Play button, says in a few words that ASTRA is not NASA, and discloses AI for screen readers', () => {
@@ -68,41 +88,37 @@ describe('screens', () => {
     expect(cadet.textContent).not.toContain('Stronger storms')
   })
 
-  it('the base screen shows the forecast and the 6 blocks before sharing power', () => {
+  it('the base screen is one living scene: 6 blocks in the tray, one leaves when placed', () => {
     startGame('Cadet')
-    expect(screen.getByText(/Day 1 of 10/)).toBeTruthy()
-    expect(screen.getAllByLabelText(/^Forecast/).length).toBeGreaterThan(0)
-    expect(screen.getByText('6 left')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
-    expect(screen.getByText('5 left')).toBeTruthy()
+    expect(screen.getByLabelText('Day 1 of 10')).toBeTruthy()
+    expect(blocksLeft()).toBe(6)
+    give('air', 'Air')
+    expect(blocksLeft()).toBe(5)
   })
 
   it('cannot give out more than 6 blocks', () => {
     startGame('Cadet')
-    const more = screen.getByRole('button', { name: 'More blocks for Air' })
-    for (let i = 0; i < 8; i++) fireEvent.click(more)
-    expect((more as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('0 left')).toBeTruthy()
+    give('air', 'Air', 2)
+    give('plants', 'Plants', 2)
+    give('shield', 'Shield', 2)
+    expect(blocksLeft()).toBe(0)
+    fireEvent.click(building('Air'))
+    expect(screen.getByRole('button', { name: 'More blocks, air' }).getAttribute('aria-disabled')).toBe('true')
   })
 
   it('Plants (air and science) is a job in both modes; only Commander has a food bar', () => {
     startGame('Cadet')
-    expect(screen.getByRole('button', { name: 'More blocks for Plants' })).toBeTruthy()
+    expect(building('Plants')).toBeTruthy()
     expect(screen.queryByRole('meter', { name: 'Food' })).toBeNull()
     cleanup()
     startGame('Commander')
-    expect(screen.getByRole('button', { name: 'More blocks for Plants' })).toBeTruthy()
+    expect(building('Plants')).toBeTruthy()
     expect(screen.getByRole('meter', { name: 'Food' })).toBeTruthy()
   })
 
-  it('an idle game ends with the Why picture strip, then the end screen', () => {
+  it('an idle game ends with the Why picture strip, then the end screen', async () => {
     startGame('Cadet')
-    for (let guard = 0; guard < 12; guard++) {
-      if (screen.queryByRole('group', { name: 'Why it happened' }) || screen.queryByRole('heading', { name: /Mission complete/ })) break
-      if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
-      else if (screen.queryByRole('button', { name: 'Next day' }) && screen.queryByLabelText('Share power')) tap('Next day')
-      else if (screen.queryByRole('button', { name: 'Next day' })) tap('Next day')
-    }
+    for (let guard = 0; guard < 14 && !over(); guard++) await playDay()
     const strip = screen.getByRole('group', { name: 'Why it happened' })
     expect(strip.querySelectorAll('figure')).toHaveLength(3)
     for (const cap of strip.querySelectorAll('figcaption')) expect(cap.textContent!.trim().split(/\s+/).length).toBeLessThanOrEqual(4)
@@ -110,12 +126,13 @@ describe('screens', () => {
     tap('See my mission')
     expect(screen.getByRole('heading', { name: 'Rescue ship' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Play again' })).toBeTruthy()
-  })
+  }, 30000)
+
   it('calling Earth shows the radio delay before the answer', async () => {
     startGame('Cadet')
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Radio' }))
+    give('radio', 'Radio')
     tap('Next day')
-    expect(screen.getByText(/Radio waves take 1\.28 seconds/)).toBeTruthy()
+    await waitFor(() => expect(screen.getByText(/Radio waves take 1\.28 seconds/)).toBeTruthy(), { timeout: 4000 })
     await waitFor(() => expect(screen.getByText(/Mission Control: /)).toBeTruthy(), { timeout: 4000 })
   })
 
@@ -157,15 +174,15 @@ describe('screens', () => {
 
   it("the base screen has a Today's Sun chip that shows its label and keeps the blocks you set", async () => {
     startGame('Cadet')
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
+    give('air', 'Air')
     await waitFor(() => expect(screen.getByRole('button', { name: /Today's Sun, SAVED/ })).toBeTruthy())
     tap(/Today's Sun, SAVED/)
     expect(screen.getByRole('heading', { name: 'Today’s Sun' })).toBeTruthy()
     tap('Back')
-    expect(screen.getByText('5 left')).toBeTruthy()
+    expect(blocksLeft()).toBe(5)
   })
 
-  it('storm cards start locked, are labelled FROM THE PAST, and unlock after a storm reaches the base', () => {
+  it('storm cards start locked, are labelled FROM THE PAST, and unlock after a storm reaches the base', async () => {
     render(<App />)
     tap('My storm cards')
     expect(screen.getByText(/0 of 8 real storms/)).toBeTruthy()
@@ -174,50 +191,46 @@ describe('screens', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     tap('Play')
     tap(/Malapert Massif/)
-  tap('Go')
+    tap('Go')
     tap(/Cadet/)
     // A steady split: 3 blocks Air, 3 blocks Shield, every day, so the storm reaches the base.
-    for (let guard = 0; guard < 40; guard++) {
-      if (screen.queryByRole('heading', { name: /Mission complete|Rescue ship/ })) break
-      if (screen.queryByRole('group', { name: 'Why it happened' })) tap('See my mission')
-      else if (screen.queryByRole('button', { name: 'See what happened' })) tap('See what happened')
-      else if (screen.queryByRole('button', { name: 'Finish the mission' })) tap('Finish the mission')
-      else if (screen.queryByText(/Share power/)) {
-        for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'More blocks for Air' }))
-        for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
-        tap('Next day')
-      } else tap('Next day')
+    for (let guard = 0; guard < 14 && !over(); guard++) {
+      await playDay(() => {
+        give('air', 'Air', 3)
+        give('shield', 'Shield', 3)
+      })
     }
+    if (screen.queryByRole('group', { name: 'Why it happened' })) tap('See my mission')
     vi.restoreAllMocks()
     tap('Play again')
     tap('My storm cards')
     expect(screen.getByText(/1 of 8 real storms/)).toBeTruthy()
     expect(document.querySelector('[data-status="PAST"]')).not.toBeNull()
     expect(screen.getAllByLabelText('Locked storm card')).toHaveLength(7)
-  })
+  }, 30000)
 
-  it('the day report is arrows and icons; the sentences are for screen readers, and say "stayed at" when a bar does not change', () => {
+  it('the day summary is arrows and icons; the sentences are for screen readers, and say "stayed at" when a bar does not change', async () => {
     startGame('Cadet')
     tap('Next day')
-    expect(screen.getByLabelText('Radiation stayed at 0.')).toBeTruthy()
+    await waitFor(() => expect(screen.getByLabelText('Radiation stayed at 0.')).toBeTruthy(), { timeout: 4000 })
     const labels = [...document.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label')!)
-    expect(labels.some((l) => /went from (\d+) to \./.test(l))).toBe(false)
+    expect(labels.some((l) => /went from [0-9]+ to [.]/.test(l))).toBe(false)
     expect(document.querySelectorAll('.summary li svg').length).toBeGreaterThanOrEqual(6)
   })
+
   it('the base screen has the base picture, 4 crew faces, ORBI and a sticky Next day button', () => {
     startGame('Cadet')
-    expect(screen.getByRole('img', { name: /^The Moon base\./ })).toBeTruthy()
-    for (const who of ['Safia', 'Kofi', 'Leo', 'Mei']) expect(screen.getAllByRole('img', { name: new RegExp(`^${who},`) }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('img', { name: /ORBI/ })).toBeTruthy()
+    expect(screen.getByRole('group', { name: /^The Moon base\./ })).toBeTruthy()
+    for (const who of ['Safia', 'Kofi', 'Leo', 'Mei']) expect(screen.getAllByRole('img', { name: new RegExp('^' + who + ',') }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('img', { name: /ORBI/ }).length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Next day' }).parentElement?.className).toContain('sticky-cta')
   })
 
   it('the base picture follows the shield blocks you give', () => {
     startGame('Cadet')
-    expect(screen.getByRole('img', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield is off.')
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
-    fireEvent.click(screen.getByRole('button', { name: 'More blocks for Shield' }))
-    expect(screen.getByRole('img', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield has 2 blocks.')
+    expect(screen.getByRole('group', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield is off.')
+    give('shield', 'Shield', 2)
+    expect(screen.getByRole('group', { name: /^The Moon base\./ }).getAttribute('aria-label')).toContain('The shield has 2 blocks.')
   })
 
   describe('settings and read-aloud', () => {
@@ -306,12 +319,12 @@ describe('screens', () => {
 
   it('a bar in the danger zone glows and a screen reader hears "low" or "high", not just a colour', () => {
     const g = { ...newGame({ mode: 'commander', siteId: 'region-3', seed: 2 }), storms: [], warned: [], air: 20, radiation: 70 }
-    render(<Base game={g} sun={null} onShare={() => undefined} onData={() => undefined} onSun={() => undefined} />)
-    expect(screen.getByRole('meter', { name: 'Air' }).getAttribute('aria-valuetext')).toBe('20, low')
-    expect(screen.getByRole('meter', { name: 'Radiation' }).getAttribute('aria-valuetext')).toBe('70, high')
+    render(<Living game={g} sun={null} onStep={() => g} onOver={() => undefined} onData={() => undefined} onSun={() => undefined} />)
+    expect(screen.getByRole('meter', { name: 'Air' }).getAttribute('aria-valuetext')).toBe('low')
+    expect(screen.getByRole('meter', { name: 'Radiation' }).getAttribute('aria-valuetext')).toBe('high')
     expect(screen.getByRole('meter', { name: 'Power' }).getAttribute('aria-valuetext')).toBeNull()
-    expect(screen.getByRole('meter', { name: 'Air' }).closest('.meter')?.className).toContain('danger')
-    expect(screen.getByRole('meter', { name: 'Power' }).closest('.meter')?.className).not.toContain('danger')
+    expect(screen.getByRole('meter', { name: 'Air' }).closest('.sc-meter')?.className).toContain('danger')
+    expect(screen.getByRole('meter', { name: 'Power' }).closest('.sc-meter')?.className).not.toContain('danger')
   })
 
   it('uses the kid word rules: "day" not "sol", "tap" not "click"', () => {
@@ -323,6 +336,5 @@ describe('screens', () => {
     const text = document.body.textContent ?? ''
     expect(text).not.toMatch(/\bsols?\b/i)
     expect(text).not.toMatch(/\bclick/i)
-    expect(text).toMatch(/Tap \+/)
-  })
+      })
 }, 20000)

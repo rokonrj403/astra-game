@@ -300,6 +300,8 @@
   touch-action: none;
 }
 .sc-block i {
+  display: grid;
+  place-items: center;
   position: absolute;
   inset: 5px;
   border-radius: 8px;
